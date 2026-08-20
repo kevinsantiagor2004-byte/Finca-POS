@@ -1,0 +1,86 @@
+services:
+  # ────────────────────────────────────────────
+  # API — ProyectoFinca POS
+  # ────────────────────────────────────────────
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: finca_api
+    ports:
+      - "8080:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=${APP_ENV:-Development}
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=proyecto_finca_pos;Username=postgres;Password=${POSTGRES_PASSWORD}
+      - Jwt__Key=${JWT_KEY}
+      - Jwt__Issuer=ProyectoFinca.API
+      - Jwt__Audience=ProyectoFinca.Clients
+      - Jwt__ExpiresInHours=8
+      - Seeding__Enabled=${SEEDING_ENABLED:-true}
+      - Seeding__AdminEmail=${ADMIN_EMAIL:-admin@finca.com}
+      - Seeding__AdminPassword=${ADMIN_PASSWORD}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - finca-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/health/live || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  # ────────────────────────────────────────────
+  # PostgreSQL 16
+  # ────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: finca_postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: proyecto_finca_pos
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d proyecto_finca_pos"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - finca-network
+
+  # ────────────────────────────────────────────
+  # pgAdmin 4 — Interfaz web para gestionar la BD
+  # Acceso: http://localhost:5050
+  # ────────────────────────────────────────────
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: finca_pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${ADMIN_EMAIL:-admin@finca.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-Admin@2024!}
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+    restart: unless-stopped
+    networks:
+      - finca-network
+    profiles:
+      - tools  # Solo se levanta con: docker compose --profile tools up
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  finca-network:
+    driver: bridge
+    name: finca_network

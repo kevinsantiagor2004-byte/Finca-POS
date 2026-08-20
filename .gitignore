@@ -1,0 +1,54 @@
+## Ignorar carpetas de compilación de .NET
+**/bin/
+**/obj/
+
+## Ignorar carpeta de Visual Studio (caché IDE, no necesario en repo)
+.vs/
+
+## Ignorar archivos de usuario específicos de VS
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+## Ignorar archivos de publicación
+**/publish/
+**/out/
+
+## Ignorar paquetes NuGet restaurados
+**/packages/
+!**/packages/build/
+
+## Archivos de secretos — NUNCA deben ir al repositorio
+**/*.pfx
+**/*.p12
+**/*.key
+appsettings.Production.json
+.env
+.env.local
+.env.production
+
+## Archivos de cobertura de código
+**/TestResults/
+**/coverage/
+**/*.trx
+**/*.coveragexml
+*.coverage
+
+## Archivos temporales del sistema
+.DS_Store
+Thumbs.db
+
+## Docker
+.dockerignore
+
+## Rider / JetBrains
+.idea/
+*.sln.iml
+
+## Logs
+*.log
+
+## Carpeta de user-secrets de .NET
+%APPDATA%\Microsoft\UserSecrets\
+~/.microsoft/usersecrets/

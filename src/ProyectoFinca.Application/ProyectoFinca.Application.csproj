@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>ProyectoFinca.Application</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Interfaces de EF Core para acceso desde Application sin dependencia directa de Infrastructure -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.8" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ProyectoFinca.Domain\ProyectoFinca.Domain.csproj" />
+  </ItemGroup>
+
+</Project>
