@@ -52,3 +52,7 @@ Thumbs.db
 ## Carpeta de user-secrets de .NET
 %APPDATA%\Microsoft\UserSecrets\
 ~/.microsoft/usersecrets/
+
+## Frontend / Node.js
+**/node_modules/
+**/dist/
