@@ -60,7 +60,7 @@ def build_orders_content(page: ft.Page) -> ft.Control:
                         ]
                     ),
                     padding=40,
-                    alignment=ft.alignment.center
+                    alignment=ft.Alignment.CENTER
                 )
             )
         else:
@@ -113,7 +113,7 @@ def build_orders_content(page: ft.Page) -> ft.Control:
                                                     ft.Container(
                                                         content=ft.Text(cfg["label"], size=10, weight=ft.FontWeight.BOLD, color=ft.Colors.WHITE),
                                                         bgcolor=cfg["color"],
-                                                        padding=ft.padding.symmetric(horizontal=8, vertical=2),
+                                                        padding=ft.Padding.symmetric(horizontal=8, vertical=2),
                                                         border_radius=8,
                                                     )
                                                 ]
@@ -143,7 +143,7 @@ def build_orders_content(page: ft.Page) -> ft.Control:
                     bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH,
                     border_radius=10,
                     padding=14,
-                    border=ft.border.all(1, ft.Colors.GREY_800),
+                    border=ft.Border.all(1, ft.Colors.GREY_800),
                 )
                 orders_list.controls.append(card)
 

@@ -144,7 +144,7 @@ def build_login_view(page: ft.Page, on_login_success) -> ft.View:
         padding=32,
         border_radius=16,
         bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH,
-        border=ft.border.all(1, ft.Colors.GREY_800),
+        border=ft.Border.all(1, ft.Colors.GREY_800),
     )
 
     return ft.View(

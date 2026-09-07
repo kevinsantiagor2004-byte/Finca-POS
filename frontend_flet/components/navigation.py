@@ -32,7 +32,7 @@ def build_app_bar(page: ft.Page, title: str, on_logout_callback) -> ft.AppBar:
                     color=ft.Colors.WHITE,
                     size=12
                 ),
-                alignment=ft.alignment.center,
+                alignment=ft.Alignment.CENTER,
                 width=32,
                 height=32,
                 border_radius=16,
@@ -45,7 +45,7 @@ def build_app_bar(page: ft.Page, title: str, on_logout_callback) -> ft.AppBar:
                     ft.Text(nombre, weight=ft.FontWeight.W_600, size=13, color=ft.Colors.WHITE),
                     ft.Container(
                         content=ft.Text(rol, size=10, weight=ft.FontWeight.BOLD, color=badge_color),
-                        padding=ft.padding.symmetric(horizontal=4, vertical=1),
+                        padding=ft.Padding.symmetric(horizontal=4, vertical=1),
                     )
                 ]
             ),
@@ -71,7 +71,7 @@ def build_app_bar(page: ft.Page, title: str, on_logout_callback) -> ft.AppBar:
         ),
         bgcolor=ft.Colors.SURFACE_CONTAINER_HIGHEST,
         actions=[
-            ft.Container(content=user_info_widget, padding=ft.padding.only(right=16))
+            ft.Container(content=user_info_widget, padding=ft.Padding.only(right=16))
         ],
     )
 

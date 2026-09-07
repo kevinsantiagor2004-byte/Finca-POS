@@ -79,7 +79,7 @@ def build_users_content(page: ft.Page) -> ft.Control:
                                     width=40,
                                     height=40,
                                     border_radius=20,
-                                    alignment=ft.alignment.center,
+                                    alignment=ft.Alignment.CENTER,
                                 ),
                                 ft.Column(
                                     spacing=2,
@@ -92,7 +92,7 @@ def build_users_content(page: ft.Page) -> ft.Control:
                                                 ft.Container(
                                                     content=ft.Text(rol, size=10, weight=ft.FontWeight.BOLD, color=ft.Colors.WHITE),
                                                     bgcolor=color_rol,
-                                                    padding=ft.padding.symmetric(horizontal=6, vertical=2),
+                                                    padding=ft.Padding.symmetric(horizontal=6, vertical=2),
                                                     border_radius=6,
                                                 )
                                             ]
@@ -109,7 +109,7 @@ def build_users_content(page: ft.Page) -> ft.Control:
                                 ft.Container(
                                     content=ft.Text("Activo" if is_active else "Inactivo", size=11, weight=ft.FontWeight.BOLD, color=ft.Colors.WHITE),
                                     bgcolor=ft.Colors.GREEN_700 if is_active else ft.Colors.RED_700,
-                                    padding=ft.padding.symmetric(horizontal=8, vertical=4),
+                                    padding=ft.Padding.symmetric(horizontal=8, vertical=4),
                                     border_radius=6,
                                 ),
                                 ft.Row(controls=actions)
@@ -120,7 +120,7 @@ def build_users_content(page: ft.Page) -> ft.Control:
                 bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH,
                 padding=12,
                 border_radius=10,
-                border=ft.border.all(1, ft.Colors.GREY_800),
+                border=ft.Border.all(1, ft.Colors.GREY_800),
             )
             users_list.controls.append(card)
 

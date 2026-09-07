@@ -32,7 +32,7 @@ def build_kpi_card(title: str, value: str, icon: str, color: str, subtitle: str 
         bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH,
         border_radius=12,
         padding=16,
-        border=ft.border.all(1, ft.Colors.GREY_800),
+        border=ft.Border.all(1, ft.Colors.GREY_800),
         expand=True,
     )
 
@@ -98,7 +98,7 @@ def build_dashboard_content(page: ft.Page, navigate_to) -> ft.Control:
                         ]
                     ),
                     padding=20,
-                    alignment=ft.alignment.center,
+                    alignment=ft.Alignment.CENTER,
                 )
             )
         else:
@@ -136,7 +136,7 @@ def build_dashboard_content(page: ft.Page, navigate_to) -> ft.Control:
                                     ft.Container(
                                         content=ft.Text(cfg["label"], size=11, weight=ft.FontWeight.BOLD, color=ft.Colors.WHITE),
                                         bgcolor=color_hex,
-                                        padding=ft.padding.symmetric(horizontal=8, vertical=3),
+                                        padding=ft.Padding.symmetric(horizontal=8, vertical=3),
                                         border_radius=6,
                                     )
                                 ]
@@ -146,7 +146,7 @@ def build_dashboard_content(page: ft.Page, navigate_to) -> ft.Control:
                     bgcolor=ft.Colors.SURFACE_CONTAINER,
                     padding=12,
                     border_radius=8,
-                    border=ft.border.all(1, ft.Colors.GREY_800),
+                    border=ft.Border.all(1, ft.Colors.GREY_800),
                 )
                 recent_orders_list.controls.append(item_card)
 

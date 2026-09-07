@@ -54,7 +54,7 @@ def build_planes_content(page: ft.Page) -> ft.Control:
                         ]
                     ),
                     padding=40,
-                    alignment=ft.alignment.center,
+                    alignment=ft.Alignment.CENTER,
                     col={"sm": 12}
                 )
             )
@@ -104,8 +104,8 @@ def build_planes_content(page: ft.Page) -> ft.Control:
                         ft.Container(
                             content=ft.Row(spacing=4, controls=chip_content),
                             bgcolor=ft.Colors.AMBER_900 if s_ob else ft.Colors.GREEN_900,
-                            border=ft.border.all(1, ft.Colors.AMBER_700 if s_ob else ft.Colors.GREEN_700),
-                            padding=ft.padding.symmetric(horizontal=8, vertical=4),
+                            border=ft.Border.all(1, ft.Colors.AMBER_700 if s_ob else ft.Colors.GREEN_700),
+                            padding=ft.Padding.symmetric(horizontal=8, vertical=4),
                             border_radius=16,
                         )
                     )
@@ -148,7 +148,7 @@ def build_planes_content(page: ft.Page) -> ft.Control:
                                             color=ft.Colors.WHITE
                                         ),
                                         bgcolor=ft.Colors.GREEN_700 if is_active else ft.Colors.GREY_700,
-                                        padding=ft.padding.symmetric(horizontal=8, vertical=2),
+                                        padding=ft.Padding.symmetric(horizontal=8, vertical=2),
                                         border_radius=10,
                                     )
                                 ]
@@ -190,7 +190,7 @@ def build_planes_content(page: ft.Page) -> ft.Control:
                     bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH,
                     border_radius=12,
                     padding=16,
-                    border=ft.border.all(1, ft.Colors.GREY_800),
+                    border=ft.Border.all(1, ft.Colors.GREY_800),
                     col={"sm": 12, "md": 6, "lg": 4}
                 )
                 plans_container.controls.append(card)

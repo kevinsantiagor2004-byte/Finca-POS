@@ -48,7 +48,7 @@ def build_services_content(page: ft.Page) -> ft.Control:
                         ]
                     ),
                     padding=40,
-                    alignment=ft.alignment.center,
+                    alignment=ft.Alignment.CENTER,
                     col={"sm": 12}
                 )
             )
@@ -94,7 +94,7 @@ def build_services_content(page: ft.Page) -> ft.Control:
                                             color=ft.Colors.WHITE
                                         ),
                                         bgcolor=ft.Colors.GREEN_700 if is_active else ft.Colors.GREY_700,
-                                        padding=ft.padding.symmetric(horizontal=8, vertical=2),
+                                        padding=ft.Padding.symmetric(horizontal=8, vertical=2),
                                         border_radius=10,
                                     )
                                 ]
@@ -102,8 +102,8 @@ def build_services_content(page: ft.Page) -> ft.Control:
                             ft.Container(
                                 content=ft.Text(cat_name, size=11, weight=ft.FontWeight.W_500, color=ft.Colors.BLUE_300),
                                 bgcolor=ft.Colors.BLUE_900,
-                                border=ft.border.all(1, ft.Colors.BLUE_800),
-                                padding=ft.padding.symmetric(horizontal=6, vertical=2),
+                                border=ft.Border.all(1, ft.Colors.BLUE_800),
+                                padding=ft.Padding.symmetric(horizontal=6, vertical=2),
                                 border_radius=6,
                             ),
                             ft.Text(
@@ -138,7 +138,7 @@ def build_services_content(page: ft.Page) -> ft.Control:
                     bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH,
                     border_radius=12,
                     padding=16,
-                    border=ft.border.all(1, ft.Colors.GREY_800),
+                    border=ft.Border.all(1, ft.Colors.GREY_800),
                     col={"sm": 12, "md": 6, "lg": 4}
                 )
                 services_container.controls.append(card)
