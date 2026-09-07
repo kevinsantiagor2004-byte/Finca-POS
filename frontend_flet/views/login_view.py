@@ -14,7 +14,7 @@ def build_login_view(page: ft.Page, on_login_success) -> ft.View:
         label="Correo Electrónico",
         hint_text="ejemplo@finca.com",
         prefix_icon=ft.Icons.EMAIL_OUTLINED,
-        keyboard_type=ft.KeyboardType.EMAIL_ADDRESS,
+        keyboard_type=ft.KeyboardType.EMAIL,
         autofocus=True,
         border_color=ft.Colors.GREEN_700,
         focused_border_color=ft.Colors.GREEN_400,

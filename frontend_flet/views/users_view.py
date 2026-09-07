@@ -131,7 +131,7 @@ def build_users_content(page: ft.Page) -> ft.Control:
 
     def open_create_user_dialog():
         nom_field = ft.TextField(label="Nombre Completo *", autofocus=True)
-        email_field = ft.TextField(label="Correo Electrónico *", keyboard_type=ft.KeyboardType.EMAIL_ADDRESS)
+        email_field = ft.TextField(label="Correo Electrónico *", keyboard_type=ft.KeyboardType.EMAIL)
         tel_field = ft.TextField(label="Teléfono", keyboard_type=ft.KeyboardType.PHONE)
         pwd_field = ft.TextField(label="Contraseña *", password=True, can_reveal_password=True)
         rol_dropdown = ft.Dropdown(label="Rol en el Sistema *", options=[ft.dropdown.Option(r) for r in ROLES], value="Mesero")
