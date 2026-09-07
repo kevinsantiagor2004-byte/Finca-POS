@@ -111,7 +111,7 @@ def build_login_view(page: ft.Page, on_login_success) -> ft.View:
             controls=[
                 ft.Container(
                     content=ft.Icon(ft.Icons.SPA, size=48, color=ft.Colors.GREEN_400),
-                    bgcolor=ft.Colors.GREEN_950,
+                    bgcolor=ft.Colors.GREEN_900,
                     padding=16,
                     border_radius=50,
                 ),

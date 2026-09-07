@@ -101,7 +101,7 @@ def build_services_content(page: ft.Page) -> ft.Control:
                             ),
                             ft.Container(
                                 content=ft.Text(cat_name, size=11, weight=ft.FontWeight.W_500, color=ft.Colors.BLUE_300),
-                                bgcolor=ft.Colors.BLUE_950,
+                                bgcolor=ft.Colors.BLUE_900,
                                 border=ft.border.all(1, ft.Colors.BLUE_800),
                                 padding=ft.padding.symmetric(horizontal=6, vertical=2),
                                 border_radius=6,

@@ -103,7 +103,7 @@ def build_planes_content(page: ft.Page) -> ft.Control:
                     service_chips.append(
                         ft.Container(
                             content=ft.Row(spacing=4, controls=chip_content),
-                            bgcolor=ft.Colors.AMBER_950 if s_ob else ft.Colors.GREEN_950,
+                            bgcolor=ft.Colors.AMBER_900 if s_ob else ft.Colors.GREEN_900,
                             border=ft.border.all(1, ft.Colors.AMBER_700 if s_ob else ft.Colors.GREEN_700),
                             padding=ft.padding.symmetric(horizontal=8, vertical=4),
                             border_radius=16,
