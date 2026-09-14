@@ -22,6 +22,7 @@ def main(page: ft.Page):
     page.bgcolor = ft.Colors.SURFACE_CONTAINER_LOWEST
 
     client = ApiClient()
+    client.configure_for_page(page)
     current_tab = [0]
 
     def on_logout(e=None):
@@ -42,10 +43,17 @@ def main(page: ft.Page):
 
     def render_login():
         page.appbar = None
+        # Sin scroll en la página: evita el conflicto expand=True + eje infinito
+        # que provoca "Cannot hit test a render box with no size" en Android.
+        page.scroll = None
+        page.vertical_alignment = ft.MainAxisAlignment.CENTER
+        page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
         page.controls.clear()
         login_view = build_login_view(page, on_login_success)
+        # Agregar el card directamente; el centrado lo maneja page.vertical/horizontal_alignment
         page.controls.append(login_view.controls[0])
         page.update()
+
 
     def render_app():
         page.controls.clear()

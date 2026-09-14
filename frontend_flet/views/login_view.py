@@ -104,15 +104,20 @@ def build_login_view(page: ft.Page, on_login_success) -> ft.View:
     email_field.on_submit = do_login
     password_field.on_submit = do_login
 
+    # Ancho responsive: respeta pantallas pequeñas (360-400px Android)
+    # y preserva 420px en tablets/desktop. page.width puede ser 0 en el primer
+    # frame, por eso el fallback a 420.
+    card_width = min(page.width - 32, 420) if page.width and page.width > 100 else 420
+
     card = ft.Container(
         content=ft.Column(
             spacing=16,
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
             controls=[
                 ft.Container(
-                    content=ft.Icon(ft.Icons.SPA, size=48, color=ft.Colors.GREEN_400),
+                    content=ft.Icon(ft.Icons.SPA, size=44, color=ft.Colors.GREEN_400),
                     bgcolor=ft.Colors.GREEN_900,
-                    padding=16,
+                    padding=14,
                     border_radius=50,
                 ),
                 ft.Text("Finca POS", size=26, weight=ft.FontWeight.BOLD, color=ft.Colors.WHITE),
@@ -132,21 +137,28 @@ def build_login_view(page: ft.Page, on_login_success) -> ft.View:
                     icon=ft.Icons.KEY,
                     on_click=set_admin_credentials,
                     style=ft.ButtonStyle(color=ft.Colors.GREY_400),
+                    height=48,
                 ),
                 ft.Text(
                     "Arquitectura Cliente-Servidor (.NET 8 + Python Flet)",
                     size=11,
                     color=ft.Colors.GREY_600,
+                    text_align=ft.TextAlign.CENTER,
                 ),
             ]
         ),
-        width=420,
-        padding=32,
+        width=card_width,
+        # margin con eje vertical para separar del teclado virtual en Android
+        margin=ft.Margin(left=16, right=16, top=16, bottom=24),
+        padding=ft.Padding.all(24),
         border_radius=16,
         bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH,
         border=ft.Border.all(1, ft.Colors.GREY_800),
     )
 
+    # No se usa ft.View como contenedor principal (solo se extrae controls[0] en main.py),
+    # pero se mantiene la firma del tipo de retorno por consistencia con el contrato
+    # de la función. scroll=None: el centrado lo delega a page.vertical/horizontal_alignment.
     return ft.View(
         route="/login",
         vertical_alignment=ft.MainAxisAlignment.CENTER,
@@ -154,3 +166,5 @@ def build_login_view(page: ft.Page, on_login_success) -> ft.View:
         controls=[card],
         bgcolor=ft.Colors.SURFACE_CONTAINER_LOWEST,
     )
+
+
