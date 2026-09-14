@@ -63,3 +63,6 @@ Thumbs.db
 *$py.class
 .venv/
 env/
+
+frontend_flet/build/
+flet_log.txt
