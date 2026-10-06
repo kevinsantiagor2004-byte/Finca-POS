@@ -40,7 +40,6 @@ appsettings.Production.json
 Thumbs.db
 
 ## Docker
-.dockerignore
 
 ## Rider / JetBrains
 .idea/

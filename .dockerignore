@@ -1,0 +1,34 @@
+# Ignorar artefactos de build del host (bin/ y obj/) para que Docker
+# use los que genera internamente en Linux, no los de Windows.
+# Sin esto, el project.assets.json de Windows contamina el build de Docker
+# con rutas tipo C:\Program Files\... que no existen en el contenedor Linux.
+**/bin/
+**/obj/
+
+# Archivos de secretos y entorno — nunca deben entrar al contenedor
+.env
+.env.*
+**/*.pfx
+**/*.p12
+**/*.key
+appsettings.Production.json
+
+# Carpetas de IDE
+.vs/
+.idea/
+*.user
+
+# Frontend (no se necesita en la imagen de la API)
+frontend/
+frontend_flet/
+
+# Git
+.git/
+.gitignore
+
+# Logs
+*.log
+
+# Docker mismo
+docker-compose*.yml
+Dockerfile*
