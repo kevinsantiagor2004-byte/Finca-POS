@@ -23,6 +23,9 @@
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="7.1.2" />
     <PackageReference Include="Microsoft.Extensions.Options" Version="8.0.0" />
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="8.0.0" />
+    <!-- MongoDB (NoSQL) -->
+    <PackageReference Include="MongoDB.Driver" Version="2.22.0" />
+    <PackageReference Include="AspNetCore.HealthChecks.MongoDb" Version="8.0.1" />
   </ItemGroup>
 
   <ItemGroup>

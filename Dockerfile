@@ -18,7 +18,7 @@ COPY ["src/ProyectoFinca.Application/ProyectoFinca.Application.csproj",         
 COPY ["src/ProyectoFinca.Infrastructure/ProyectoFinca.Infrastructure.csproj",   "src/ProyectoFinca.Infrastructure/"]
 COPY ["src/ProyectoFinca.Domain/ProyectoFinca.Domain.csproj",                   "src/ProyectoFinca.Domain/"]
 
-RUN dotnet restore "src/ProyectoFinca.API/ProyectoFinca.API.csproj" --locked-mode
+RUN dotnet restore "src/ProyectoFinca.API/ProyectoFinca.API.csproj"
 
 # ── Etapa 2: Build ──────────────────────────────────────────────────────────────
 FROM restore AS build

@@ -136,12 +136,18 @@ builder.Services.AddAuthorizationBuilder();
 // 5. Health Checks — /health/live y /health/ready
 // =========================================================
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")!;
+var mongoConnString  = builder.Configuration.GetSection("MongoSettings")["ConnectionString"] ?? "mongodb://localhost:27017";
 
 builder.Services
     .AddHealthChecks()
     .AddNpgSql(
         connectionString,
         name:    "postgresql",
+        tags:    ["ready", "db"],
+        timeout: TimeSpan.FromSeconds(5))
+    .AddMongoDb(
+        mongoConnString,
+        name:    "mongodb",
         tags:    ["ready", "db"],
         timeout: TimeSpan.FromSeconds(5))
     .AddCheck("api", () => HealthCheckResult.Healthy("API operativa"), tags: ["live"]);

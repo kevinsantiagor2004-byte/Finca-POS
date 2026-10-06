@@ -34,6 +34,27 @@ public static class InfrastructureServiceExtensions
             configuration.GetSection(SeedingOptions.SectionName));
 
         // -----------------------------------------------
+        // Persistencia NoSQL — MongoDB (Auditoría & Snapshots)
+        // -----------------------------------------------
+        services.Configure<MongoOptions>(
+            configuration.GetSection(MongoOptions.SectionName));
+
+        services.AddSingleton<MongoDB.Driver.IMongoClient>(sp =>
+        {
+            var options = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<MongoOptions>>().Value;
+            return new MongoDB.Driver.MongoClient(options.ConnectionString);
+        });
+
+        services.AddScoped<MongoDB.Driver.IMongoDatabase>(sp =>
+        {
+            var client = sp.GetRequiredService<MongoDB.Driver.IMongoClient>();
+            var options = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<MongoOptions>>().Value;
+            return client.GetDatabase(options.DatabaseName);
+        });
+
+        services.AddScoped<IAuditLogRepository, ProyectoFinca.Infrastructure.Persistence.Mongo.MongoAuditRepository>();
+
+        // -----------------------------------------------
         // Entity Framework Core — PostgreSQL
         // -----------------------------------------------
         var connectionString = configuration.GetConnectionString("DefaultConnection")

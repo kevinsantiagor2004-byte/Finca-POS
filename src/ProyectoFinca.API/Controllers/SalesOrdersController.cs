@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -5,6 +6,7 @@ using Microsoft.Extensions.Options;
 using ProyectoFinca.Application.DTOs.Common;
 using ProyectoFinca.Application.DTOs.SalesOrders;
 using ProyectoFinca.Application.Interfaces;
+using ProyectoFinca.Application.Models;
 using ProyectoFinca.Domain.Entities;
 using ProyectoFinca.Domain.Enums;
 using ProyectoFinca.Infrastructure.Options;
@@ -26,14 +28,29 @@ namespace ProyectoFinca.API.Controllers;
 public class SalesOrdersController : BaseApiController
 {
     private readonly IApplicationDbContext _context;
+    private readonly IAuditLogRepository _auditRepo;
     private readonly decimal _defaultTaxRate;
 
     public SalesOrdersController(
         IApplicationDbContext context,
+        IAuditLogRepository auditRepo,
         IOptions<PosOptions> posOptions)
     {
         _context        = context;
+        _auditRepo      = auditRepo;
         _defaultTaxRate = posOptions.Value.PorcentajeImpuestoDefault;
+    }
+
+    private string GetClientPlatform()
+    {
+        if (Request.Headers.TryGetValue("X-Client-Platform", out var platform) && !string.IsNullOrWhiteSpace(platform))
+            return platform.ToString();
+
+        var ua = Request.Headers.UserAgent.ToString();
+        if (ua.Contains("Android", StringComparison.OrdinalIgnoreCase)) return "Android";
+        if (ua.Contains("Windows", StringComparison.OrdinalIgnoreCase)) return "Desktop (Windows)";
+        if (ua.Contains("Dart", StringComparison.OrdinalIgnoreCase)) return "Flet Client";
+        return "Web / API Client";
     }
 
     // =========================================================
@@ -269,6 +286,37 @@ public class SalesOrdersController : BaseApiController
         _context.SalesOrders.Add(order);
         await _context.SaveChangesAsync();
 
+        // 6b. Snapshot de auditoría en MongoDB (NoSQL) — fail-safe
+        await _auditRepo.LogEventAsync(new AuditLogEntry
+        {
+            EventType      = "OrderCreated",
+            EntityName     = "SalesOrder",
+            EntityId       = order.Id.ToString(),
+            UserId         = CurrentUserId,
+            UserName       = CurrentUserName,
+            UserRole       = User.FindFirstValue(ClaimTypes.Role) ?? "Usuario",
+            Timestamp      = DateTime.UtcNow,
+            ClientPlatform = GetClientPlatform(),
+            NewState       = order.Estado.ToString(),
+            Details        = new
+            {
+                order.NumeroOrden,
+                PlanNombre = plan.Nombre,
+                order.Subtotal,
+                order.Descuento,
+                order.PorcentajeImpuesto,
+                order.Total,
+                order.NombreCliente,
+                order.NumeroHuespedes,
+                Servicios = serviciosDetalle.Select(s => new
+                {
+                    s.ServiceId,
+                    s.PrecioCobrado,
+                    s.EraObligatorio
+                })
+            }
+        });
+
         // 7. Recargar con navegaciones para el response
         await _context.SalesOrders.Entry(order).Reference(o => o.Usuario).LoadAsync();
         await _context.SalesOrders.Entry(order).Reference(o => o.Plan).LoadAsync();
@@ -313,6 +361,7 @@ public class SalesOrdersController : BaseApiController
             && string.IsNullOrWhiteSpace(dto.Motivo))
             return BadRequest(new { error = "Se requiere un motivo al cancelar una orden." });
 
+        var estadoAnterior = order.Estado;
         order.Estado = dto.NuevoEstado;
 
         // Agregar motivo de cancelación a observaciones para auditoría
@@ -320,6 +369,29 @@ public class SalesOrdersController : BaseApiController
             order.Observaciones = $"[CANCELADO] {dto.Motivo}\n{order.Observaciones}".Trim();
 
         await _context.SaveChangesAsync();
+
+        // Trazabilidad de cambio de estado en MongoDB (NoSQL) — fail-safe
+        await _auditRepo.LogEventAsync(new AuditLogEntry
+        {
+            EventType      = "OrderStatusChanged",
+            EntityName     = "SalesOrder",
+            EntityId       = order.Id.ToString(),
+            UserId         = CurrentUserId,
+            UserName       = CurrentUserName,
+            UserRole       = User.FindFirstValue(ClaimTypes.Role) ?? "Usuario",
+            Timestamp      = DateTime.UtcNow,
+            ClientPlatform = GetClientPlatform(),
+            PreviousState  = estadoAnterior.ToString(),
+            NewState       = dto.NuevoEstado.ToString(),
+            Motivo         = dto.Motivo,
+            Details        = new
+            {
+                order.NumeroOrden,
+                order.Total,
+                order.NombreCliente
+            }
+        });
+
         return Ok(MapToResponse(order));
     }
 

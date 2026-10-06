@@ -10,6 +10,8 @@
   <ItemGroup>
     <!-- Swagger / OpenAPI -->
     <PackageReference Include="AspNetCore.HealthChecks.NpgSql" Version="8.0.2" />
+    <PackageReference Include="AspNetCore.HealthChecks.MongoDb" Version="8.0.1" />
+    <PackageReference Include="MongoDB.Driver" Version="2.22.0" />
     <PackageReference Include="Microsoft.AspNetCore.Diagnostics.HealthChecks" Version="2.2.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.7.3" />
 
