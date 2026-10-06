@@ -215,7 +215,7 @@ def build_orders_content(page: ft.Page) -> ft.Control:
             motivo_field.visible = (dropdown_estado.value == "Cancelada")
             page.update()
 
-        dropdown_estado.on_change = on_estado_change
+        dropdown_estado.on_select = on_estado_change
 
         def save_status(e):
             if dropdown_estado.value == "Cancelada" and not (motivo_field.value and motivo_field.value.strip()):
@@ -352,7 +352,7 @@ def build_orders_content(page: ft.Page) -> ft.Control:
                     )
                     services_checkbox_container.controls.append(cb)
 
-        plan_dropdown.on_change = on_plan_change
+        plan_dropdown.on_select = on_plan_change
         descuento_field.on_change = lambda _: recalculate_price()
 
         # Construir checklist inicial y calcular
@@ -434,7 +434,7 @@ def build_orders_content(page: ft.Page) -> ft.Control:
 
     # Listeners de filtros
     search_field.on_submit = lambda _: load_orders()
-    status_filter.on_change = lambda _: load_orders()
+    status_filter.on_select = lambda _: load_orders()
 
     load_orders()
 

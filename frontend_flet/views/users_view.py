@@ -233,7 +233,7 @@ def build_users_content(page: ft.Page) -> ft.Control:
         )
         page.show_dialog(dlg)
 
-    role_filter.on_change = lambda _: load_users()
+    role_filter.on_select = lambda _: load_users()
     load_users()
 
     header = ft.Row(

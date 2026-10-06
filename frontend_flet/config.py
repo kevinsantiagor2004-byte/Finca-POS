@@ -10,7 +10,7 @@ import flet as ft
 # En emulador Android: 10.0.2.2 mapea a localhost de la máquina host.
 # En dispositivo físico: define FINCA_API_HOST con la IP LAN (ej. 192.168.1.50) o configura DEFAULT_PHYSICAL_DEVICE_IP.
 DEFAULT_PHYSICAL_DEVICE_IP = os.getenv("FINCA_API_HOST", "192.168.1.100")
-API_PORT = os.getenv("FINCA_API_PORT", "5000")
+API_PORT = os.getenv("FINCA_API_PORT", "8080")
 
 
 def get_api_base_url(page: Optional[ft.Page] = None) -> str:

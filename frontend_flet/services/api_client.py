@@ -113,7 +113,7 @@ class ApiClient:
             else:
                 return False, self._parse_error(res)
         except httpx.ConnectError:
-            return False, "No se puede conectar con el Servidor API (.NET en puerto 5000)."
+            return False, f"No se puede conectar con el Servidor API (.NET en {self.base_url})."
         except Exception as e:
             return False, f"Error de conexión: {str(e)}"
 
@@ -244,7 +244,7 @@ class ApiClient:
             if numero_orden:
                 params.append(f"NumeroOrden={numero_orden}")
             query_str = "&".join(params)
-            res = self._client.get(f"/sales-orders?{query_str}", headers=self._get_headers())
+            res = self._client.get(f"/SalesOrders?{query_str}", headers=self._get_headers())
             if res.status_code == 200:
                 return True, res.json()
             return False, self._parse_error(res)
@@ -253,7 +253,7 @@ class ApiClient:
 
     def get_order_by_id(self, order_id: str) -> Tuple[bool, Dict[str, Any] | str]:
         try:
-            res = self._client.get(f"/sales-orders/{order_id}", headers=self._get_headers())
+            res = self._client.get(f"/SalesOrders/{order_id}", headers=self._get_headers())
             if res.status_code == 200:
                 return True, res.json()
             return False, self._parse_error(res)
@@ -262,7 +262,7 @@ class ApiClient:
 
     def create_order(self, data: Dict[str, Any]) -> Tuple[bool, Dict[str, Any] | str]:
         try:
-            res = self._client.post("/sales-orders", json=data, headers=self._get_headers())
+            res = self._client.post("/SalesOrders", json=data, headers=self._get_headers())
             if res.status_code in (200, 201):
                 return True, res.json()
             return False, self._parse_error(res)
@@ -274,7 +274,7 @@ class ApiClient:
             payload: Dict[str, Any] = {"nuevoEstado": nuevo_estado}
             if motivo_cancelacion:
                 payload["motivoCancelacion"] = motivo_cancelacion
-            res = self._client.patch(f"/sales-orders/{order_id}/estado", json=payload, headers=self._get_headers())
+            res = self._client.patch(f"/SalesOrders/{order_id}/estado", json=payload, headers=self._get_headers())
             if res.status_code == 200:
                 return True, res.json()
             return False, self._parse_error(res)

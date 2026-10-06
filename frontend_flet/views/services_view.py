@@ -278,7 +278,7 @@ def build_services_content(page: ft.Page) -> ft.Control:
         options=[ft.dropdown.Option("Todas")] + [ft.dropdown.Option(c) for c in CATEGORIAS_SERVICIOS],
         value="Todas",
         width=220,
-        on_change=on_category_filter_change
+        on_select=on_category_filter_change
     )
 
     # Cargar al inicio
