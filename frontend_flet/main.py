@@ -20,15 +20,23 @@ from views.services_view import build_services_content
 from views.users_view import build_users_content
 
 
-def main(page: ft.Page):
+async def main(page: ft.Page):
     # ── Configuración de página ───────────────────────────────────────────────
     page.title = "Finca POS — Sistema de Punto de Venta"
     page.theme_mode = ft.ThemeMode.DARK
     page.padding = 0
     page.bgcolor = ft.Colors.SURFACE_CONTAINER_LOWEST
 
+    # Prioridad 1: URL guardada por el usuario en SharedPreferences
+    saved_url = None
+    try:
+        prefs = ft.SharedPreferences()
+        saved_url = await prefs.get("finca_api_url")
+    except Exception:
+        pass
+
     client = ApiClient()
-    client.configure_for_page(page)
+    client.configure_for_page(page, custom_url=saved_url)
     current_tab = [0]
 
     # Guarda el modo (móvil/desktop) del último render para detectar cruce de umbral

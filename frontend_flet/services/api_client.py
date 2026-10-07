@@ -24,11 +24,11 @@ class ApiClient:
         self.user_info: Optional[Dict[str, Any]] = None
         self._client = httpx.Client(base_url=self.base_url, timeout=12.0)
 
-    def configure_for_page(self, page: ft.Page):
-        """Actualiza la URL base de acuerdo a la plataforma de la página ejecutada."""
+    def configure_for_page(self, page: Optional[ft.Page] = None, custom_url: Optional[str] = None):
+        """Actualiza la URL base de acuerdo a una URL personalizada o a la plataforma detectada."""
         from config import get_api_base_url
-        new_url = get_api_base_url(page)
-        if new_url != self.base_url:
+        new_url = get_api_base_url(page, saved_url=custom_url)
+        if new_url != self.base_url or self._client is None:
             self.base_url = new_url
             self._client = httpx.Client(base_url=self.base_url, timeout=12.0)
 
@@ -112,10 +112,12 @@ class ApiClient:
                 return False, "Demasiados intentos fallidos. Espera 1 minuto."
             else:
                 return False, self._parse_error(res)
-        except httpx.ConnectError:
-            return False, f"No se puede conectar con el Servidor API (.NET en {self.base_url})."
+        except (httpx.ConnectError, httpx.ConnectTimeout):
+            return False, f"No se puede conectar con el Servidor API en {self.base_url}. Verifica la dirección en 'Configurar servidor'."
+        except httpx.TimeoutException:
+            return False, f"Tiempo de espera agotado al conectar con {self.base_url}."
         except Exception as e:
-            return False, f"Error de conexión: {str(e)}"
+            return False, f"Error al conectar con {self.base_url}: {str(e)}"
 
     def logout(self):
         """Cierra la sesión activa."""

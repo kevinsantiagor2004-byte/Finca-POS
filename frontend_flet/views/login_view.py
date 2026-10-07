@@ -4,6 +4,7 @@ Vista de Inicio de Sesión (Login) en Python Flet.
 
 import flet as ft
 from services.api_client import ApiClient
+from components.toast import show_toast
 
 
 def build_login_view(page: ft.Page, on_login_success) -> ft.View:
@@ -83,6 +84,72 @@ def build_login_view(page: ft.Page, on_login_success) -> ft.View:
         error_banner.visible = False
         page.update()
 
+    server_input = ft.TextField(
+        label="Dirección del Servidor API",
+        hint_text="http://192.168.1.7:8080",
+        value=client.base_url,
+        prefix_icon=ft.Icons.DNS_OUTLINED,
+        autofocus=True,
+    )
+    server_error_text = ft.Text("", color=ft.Colors.RED_300, size=12, visible=False)
+
+    async def open_server_dialog(e):
+        try:
+            prefs = ft.SharedPreferences()
+            saved = await prefs.get("finca_api_url")
+            server_input.value = str(saved) if saved else client.base_url
+        except Exception:
+            server_input.value = client.base_url
+        server_error_text.visible = False
+        page.show_dialog(server_dialog)
+        page.update()
+
+    async def save_server_config(e):
+        raw = (server_input.value or "").strip()
+        if not raw:
+            server_error_text.value = "Por favor ingresa una dirección válida."
+            server_error_text.visible = True
+            page.update()
+            return
+
+        from config import normalize_api_url
+        normalized = normalize_api_url(raw)
+
+        try:
+            prefs = ft.SharedPreferences()
+            await prefs.set("finca_api_url", normalized)
+        except Exception as err:
+            print(f"Error al guardar en SharedPreferences: {err}")
+
+        # Actualizar ApiClient de inmediato sin reiniciar la aplicación
+        client.configure_for_page(page, custom_url=normalized)
+        page.pop_dialog()
+        error_banner.visible = False
+        show_toast(page, f"Servidor configurado: {normalized}")
+        page.update()
+
+    server_dialog = ft.AlertDialog(
+        title=ft.Text("Configurar Servidor API"),
+        content=ft.Column(
+            tight=True,
+            spacing=10,
+            width=380,
+            controls=[
+                ft.Text(
+                    "Ingresa la dirección IP y puerto del backend en tu red Wi-Fi (ej. máquina con Docker):",
+                    size=12,
+                    color=ft.Colors.GREY_300,
+                ),
+                server_input,
+                server_error_text,
+            ]
+        ),
+        actions=[
+            ft.TextButton("Cancelar", on_click=lambda _: page.pop_dialog()),
+            ft.FilledButton("Guardar", on_click=save_server_config, style=ft.ButtonStyle(bgcolor=ft.Colors.GREEN_600)),
+        ]
+    )
+
     login_button = ft.FilledButton(
         content=ft.Row(
             alignment=ft.MainAxisAlignment.CENTER,
@@ -138,6 +205,13 @@ def build_login_view(page: ft.Page, on_login_success) -> ft.View:
                     on_click=set_admin_credentials,
                     style=ft.ButtonStyle(color=ft.Colors.GREY_400),
                     height=48,
+                ),
+                ft.TextButton(
+                    "Configurar servidor",
+                    icon=ft.Icons.SETTINGS_ETHERNET,
+                    on_click=open_server_dialog,
+                    style=ft.ButtonStyle(color=ft.Colors.GREY_400),
+                    height=36,
                 ),
                 ft.Text(
                     "Arquitectura Cliente-Servidor (.NET 8 + Python Flet)",

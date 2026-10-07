@@ -13,14 +13,30 @@ DEFAULT_PHYSICAL_DEVICE_IP = os.getenv("FINCA_API_HOST", "192.168.1.100")
 API_PORT = os.getenv("FINCA_API_PORT", "8080")
 
 
-def get_api_base_url(page: Optional[ft.Page] = None) -> str:
+def normalize_api_url(url: str) -> str:
+    """Normaliza la dirección asegurando protocolo http/https y terminación /api."""
+    clean = url.strip()
+    if not clean.startswith("http://") and not clean.startswith("https://"):
+        clean = f"http://{clean}"
+    clean = clean.rstrip("/")
+    if not clean.endswith("/api"):
+        clean = f"{clean}/api"
+    return clean
+
+
+def get_api_base_url(page: Optional[ft.Page] = None, saved_url: Optional[str] = None) -> str:
     """
-    Determina la URL base de la API según la variable de entorno FINCA_API_URL,
-    o detectando la plataforma actual (Android emulador/físico, Web, Desktop).
+    Determina la URL base de la API según orden de prioridad:
+    1. URL guardada por el usuario (SharedPreferences)
+    2. Variable de entorno FINCA_API_URL
+    3. Detección por plataforma (10.0.2.2 en Android emulador, IP física o localhost en desktop)
     """
+    if saved_url and saved_url.strip():
+        return normalize_api_url(saved_url)
+
     env_url = os.getenv("FINCA_API_URL")
-    if env_url:
-        return env_url.rstrip("/")
+    if env_url and env_url.strip():
+        return normalize_api_url(env_url)
 
     # Detección por Page.platform si está disponible
     platform = getattr(page, "platform", None) if page else None
