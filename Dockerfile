@@ -60,6 +60,9 @@ ENV TZ=America/Bogota
 # Copiar el artefacto publicado
 COPY --from=publish /app/publish .
 
+# Instalar curl para healthcheck de Docker
+RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
+
 # Cambiar al usuario no-root
 USER appuser
 

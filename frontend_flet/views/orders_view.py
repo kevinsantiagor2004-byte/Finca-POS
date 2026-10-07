@@ -68,13 +68,14 @@ def build_orders_content(page: ft.Page) -> ft.Control:
                 ord_id = ord_item.get("id")
                 num = ord_item.get("numeroOrden", "N/A")
                 cliente = ord_item.get("nombreCliente", "Cliente")
-                plan_nom = ord_item.get("planNombre", "Plan")
+                plan_nom = ord_item.get("nombrePlan", "Plan")
                 fecha = ord_item.get("fechaOrden", "")[:10]
                 total = ord_item.get("total", 0)
                 subtotal = ord_item.get("subtotal", 0)
                 desc = ord_item.get("descuento", 0)
                 huespedes = ord_item.get("numeroHuespedes", 1)
                 est = ord_item.get("estado", "Pendiente")
+                obs = ord_item.get("observaciones")
                 cfg = ORDER_STATUS_MAP.get(est, {"label": est, "color": "#71717A"})
 
                 actions = [
@@ -90,9 +91,12 @@ def build_orders_content(page: ft.Page) -> ft.Control:
                         )
                     )
 
+                obs_clean = obs.strip().replace("\r\n", " ").replace("\n", " ") if obs else ""
+
                 card = ft.Container(
                     content=ft.Row(
                         alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                        vertical_alignment=ft.CrossAxisAlignment.CENTER,
                         controls=[
                             ft.Row(
                                 spacing=16,
@@ -123,6 +127,25 @@ def build_orders_content(page: ft.Page) -> ft.Control:
                                         ]
                                     )
                                 ]
+                            ),
+                            ft.Container(
+                                content=ft.Row(
+                                    spacing=6,
+                                    controls=[
+                                        ft.Icon(ft.Icons.COMMENT_OUTLINED, size=14, color=ft.Colors.GREY_500),
+                                        ft.Text(
+                                            obs_clean,
+                                            size=12,
+                                            color=ft.Colors.GREY_400,
+                                            italic=True,
+                                            max_lines=1,
+                                            overflow=ft.TextOverflow.ELLIPSIS,
+                                            expand=True,
+                                        )
+                                    ]
+                                ) if obs_clean else None,
+                                expand=True,
+                                padding=ft.Padding.symmetric(horizontal=16),
                             ),
                             ft.Row(
                                 spacing=16,
@@ -174,25 +197,41 @@ def build_orders_content(page: ft.Page) -> ft.Control:
                 )
             )
 
+        obs = ord_item.get("observaciones")
+        obs_text = obs.strip() if obs else ""
+
+        detail_controls = [
+            ft.Text(f"Cliente: {ord_item.get('nombreCliente')}", weight=ft.FontWeight.BOLD),
+            ft.Text(f"Plan Contratado: {ord_item.get('nombrePlan', 'Plan')}", color=ft.Colors.GREEN_400),
+            ft.Divider(color=ft.Colors.GREY_800),
+            ft.Text("Servicios en la orden:", size=12, weight=ft.FontWeight.BOLD, color=ft.Colors.GREY_400),
+            ft.Column(spacing=4, controls=servicios_rows if servicios_rows else [ft.Text("Solo servicios base.", size=12, color=ft.Colors.GREY_500)]),
+        ]
+
+        if obs_text:
+            detail_controls.extend([
+                ft.Divider(color=ft.Colors.GREY_800),
+                ft.Text("Observaciones:", size=12, weight=ft.FontWeight.BOLD, color=ft.Colors.GREY_400),
+                ft.Text(obs_text, size=12, color=ft.Colors.GREY_300, italic=True),
+            ])
+
+        detail_controls.extend([
+            ft.Divider(color=ft.Colors.GREY_800),
+            ft.Row(alignment=ft.MainAxisAlignment.SPACE_BETWEEN, controls=[ft.Text("Subtotal:"), ft.Text(format_cop(ord_item.get("subtotal", 0)))]),
+            ft.Row(alignment=ft.MainAxisAlignment.SPACE_BETWEEN, controls=[ft.Text("Descuento:"), ft.Text(f"-{format_cop(ord_item.get('descuento', 0))}", color=ft.Colors.AMBER_400)]),
+            ft.Row(alignment=ft.MainAxisAlignment.SPACE_BETWEEN, controls=[ft.Text("IVA (13%):"), ft.Text(format_cop(ord_item.get("montoImpuesto", 0)))]),
+            ft.Divider(color=ft.Colors.GREY_800),
+            ft.Row(alignment=ft.MainAxisAlignment.SPACE_BETWEEN, controls=[ft.Text("TOTAL:", weight=ft.FontWeight.BOLD, size=16), ft.Text(format_cop(ord_item.get("total", 0)), weight=ft.FontWeight.BOLD, size=18, color=ft.Colors.GREEN_400)]),
+        ])
+
         dlg = ft.AlertDialog(
             title=ft.Text(f"Detalle: {ord_item.get('numeroOrden')}"),
             content=ft.Column(
                 tight=True,
                 spacing=10,
                 width=380,
-                controls=[
-                    ft.Text(f"Cliente: {ord_item.get('nombreCliente')}", weight=ft.FontWeight.BOLD),
-                    ft.Text(f"Plan Contratado: {ord_item.get('planNombre')}", color=ft.Colors.GREEN_400),
-                    ft.Divider(color=ft.Colors.GREY_800),
-                    ft.Text("Servicios en la orden:", size=12, weight=ft.FontWeight.BOLD, color=ft.Colors.GREY_400),
-                    ft.Column(spacing=4, controls=servicios_rows if servicios_rows else [ft.Text("Solo servicios base.", size=12, color=ft.Colors.GREY_500)]),
-                    ft.Divider(color=ft.Colors.GREY_800),
-                    ft.Row(alignment=ft.MainAxisAlignment.SPACE_BETWEEN, controls=[ft.Text("Subtotal:"), ft.Text(format_cop(ord_item.get("subtotal", 0)))]),
-                    ft.Row(alignment=ft.MainAxisAlignment.SPACE_BETWEEN, controls=[ft.Text("Descuento:"), ft.Text(f"-{format_cop(ord_item.get('descuento', 0))}", color=ft.Colors.AMBER_400)]),
-                    ft.Row(alignment=ft.MainAxisAlignment.SPACE_BETWEEN, controls=[ft.Text("IVA (13%):"), ft.Text(format_cop(ord_item.get("montoImpuesto", 0)))]),
-                    ft.Divider(color=ft.Colors.GREY_800),
-                    ft.Row(alignment=ft.MainAxisAlignment.SPACE_BETWEEN, controls=[ft.Text("TOTAL:", weight=ft.FontWeight.BOLD, size=16), ft.Text(format_cop(ord_item.get("total", 0)), weight=ft.FontWeight.BOLD, size=18, color=ft.Colors.GREEN_400)]),
-                ]
+                scroll=ft.ScrollMode.AUTO,
+                controls=detail_controls
             ),
             actions=[ft.TextButton("Cerrar", on_click=lambda _: page.pop_dialog())]
         )
@@ -272,31 +311,33 @@ def build_orders_content(page: ft.Page) -> ft.Control:
 
         selected_optional_ids = set()
 
-        def recalculate_price():
+        def calculate_subtotal() -> float:
             selected_plan_id = plan_dropdown.value
             target_plan = next((p for p in planes if p["id"] == selected_plan_id), None)
             if not target_plan:
-                return
+                return 0.0
 
-            base = float(target_plan.get("precioBase", 0))
-            subtotal = base
-
-            # Sumar obligatorios
+            sub = float(target_plan.get("precioBase", 0))
             for s in target_plan.get("servicios", []):
                 if s.get("esObligatorio"):
-                    subtotal += float(s.get("precioEfectivo", 0))
+                    sub += float(s.get("precioEfectivo", 0))
 
-            # Sumar opcionales seleccionados
             for s in target_plan.get("servicios", []):
                 if not s.get("esObligatorio") and s.get("serviceId") in selected_optional_ids:
-                    subtotal += float(s.get("precioEfectivo", 0))
+                    sub += float(s.get("precioEfectivo", 0))
 
+            return sub
+
+        def recalculate_price():
+            subtotal = calculate_subtotal()
+
+            raw_desc = (descuento_field.value or "").replace(".", "").replace(" ", "")
             try:
-                desc = float(descuento_field.value) if descuento_field.value else 0.0
+                desc = float(raw_desc) if raw_desc else 0.0
             except ValueError:
                 desc = 0.0
 
-            base_imponible = max(0.0, subtotal - desc)
+            base_imponible = max(0.0, subtotal - desc) if desc >= 0 else subtotal
             iva = base_imponible * 0.13
             total = base_imponible + iva
 
@@ -366,9 +407,25 @@ def build_orders_content(page: ft.Page) -> ft.Control:
 
             try:
                 h_val = int(huespedes_field.value) if huespedes_field.value else 1
-                d_val = float(descuento_field.value) if descuento_field.value else 0.0
             except ValueError:
-                show_toast(page, "Huéspedes o descuento con valor numérico inválido.", is_error=True)
+                show_toast(page, "Huéspedes con valor numérico inválido.", is_error=True)
+                return
+
+            raw_desc = (descuento_field.value or "").replace(".", "").replace(" ", "")
+            try:
+                d_val = float(raw_desc) if raw_desc else 0.0
+            except ValueError:
+                show_toast(page, "El descuento debe ser un valor numérico.", is_error=True)
+                return
+
+            subtotal = calculate_subtotal()
+
+            if d_val < 0:
+                show_toast(page, "El descuento no puede ser negativo.", is_error=True)
+                return
+
+            if d_val > subtotal:
+                show_toast(page, "El descuento no puede ser mayor que el subtotal.", is_error=True)
                 return
 
             payload = {

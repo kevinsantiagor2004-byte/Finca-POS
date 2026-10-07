@@ -50,22 +50,28 @@ builder.Services.AddCors(options =>
 builder.Services.AddRateLimiter(options =>
 {
     // Política para Login: máximo 5 intentos por minuto por IP
-    options.AddFixedWindowLimiter("auth-login", opt =>
-    {
-        opt.PermitLimit         = 5;
-        opt.Window              = TimeSpan.FromMinutes(1);
-        opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-        opt.QueueLimit          = 0;
-    });
+    options.AddPolicy("auth-login", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit          = 5,
+                Window               = TimeSpan.FromMinutes(1),
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                QueueLimit           = 0
+            }));
 
     // Política global: 100 req/minuto por IP para todos los endpoints
-    options.AddFixedWindowLimiter("api-global", opt =>
-    {
-        opt.PermitLimit         = 100;
-        opt.Window              = TimeSpan.FromMinutes(1);
-        opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-        opt.QueueLimit          = 10;
-    });
+    options.AddPolicy("api-global", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit          = 100,
+                Window               = TimeSpan.FromMinutes(1),
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                QueueLimit           = 10
+            }));
 
     // Respuesta personalizada al superar el límite
     options.OnRejected = async (context, token) =>

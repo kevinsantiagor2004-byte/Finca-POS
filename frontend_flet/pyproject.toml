@@ -1,0 +1,15 @@
+[project]
+name = "finca-pos"
+version = "1.0.0"
+description = "Punto de venta y hospedaje para fincas turísticas"
+requires-python = ">=3.10"
+dependencies = [
+    "flet>=0.86.0",
+    "httpx>=0.28.0",
+]
+
+[tool.flet]
+product = "Finca POS"
+org = "com.fincapos"
+company = "Finca POS"
+copyright = "Copyright (C) 2026 Finca POS"
