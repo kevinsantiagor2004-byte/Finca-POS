@@ -13,3 +13,7 @@ product = "Finca POS"
 org = "com.fincapos"
 company = "Finca POS"
 copyright = "Copyright (C) 2026 Finca POS"
+
+# jni_flutter 1.0.4+1 (publicado 2026-10-06) rompe el build con Flet 0.86.5; fijar la anterior
+[tool.flet.flutter.pubspec.dependency_overrides]
+jni_flutter = "1.0.3"

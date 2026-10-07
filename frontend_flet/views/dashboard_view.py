@@ -124,7 +124,7 @@ def build_dashboard_content(page: ft.Page, navigate_to) -> ft.Control:
                                         spacing=2,
                                         controls=[
                                             ft.Text(ord_item.get("numeroOrden", "N/A"), weight=ft.FontWeight.BOLD, size=14),
-                                            ft.Text(f"Cliente: {ord_item.get('nombreCliente', 'General')} · Plan: {ord_item.get('planNombre', 'N/A')}", size=12, color=ft.Colors.GREY_400),
+                                            ft.Text(f"Cliente: {ord_item.get('nombreCliente', 'General')} · Plan: {ord_item.get('nombrePlan') or 'Sin plan'}", size=12, color=ft.Colors.GREY_400),
                                         ]
                                     )
                                 ]
