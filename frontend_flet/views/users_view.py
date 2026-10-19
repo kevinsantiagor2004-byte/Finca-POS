@@ -133,7 +133,12 @@ def build_users_content(page: ft.Page) -> ft.Control:
         nom_field = ft.TextField(label="Nombre Completo *", autofocus=True)
         email_field = ft.TextField(label="Correo Electrónico *", keyboard_type=ft.KeyboardType.EMAIL)
         tel_field = ft.TextField(label="Teléfono", keyboard_type=ft.KeyboardType.PHONE)
-        pwd_field = ft.TextField(label="Contraseña *", password=True, can_reveal_password=True)
+        pwd_field = ft.TextField(
+            label="Contraseña *",
+            password=True,
+            can_reveal_password=True,
+            helper_text="Mínimo 8 caracteres, al menos 1 mayúscula y 1 número"
+        )
         rol_dropdown = ft.Dropdown(label="Rol en el Sistema *", options=[ft.dropdown.Option(r) for r in ROLES], value="Mesero")
 
         def save(e):

@@ -15,5 +15,8 @@ public enum UserRole
     Mesero = 3,
 
     /// <summary>Cliente hospedado o visitante de la finca.</summary>
-    Cliente = 4
+    Cliente = 4,
+
+    /// <summary>Personal de cocina/restaurante que visualiza los pedidos y almuerzos facturados para despacho.</summary>
+    Restaurante = 5
 }

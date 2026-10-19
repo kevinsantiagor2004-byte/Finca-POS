@@ -162,7 +162,7 @@ def build_dashboard_content(page: ft.Page, navigate_to) -> ft.Control:
             ft.Column(
                 spacing=2,
                 controls=[
-                    ft.Text(f"¡Hola de nuevo, {user_name}! 👋", size=22, weight=ft.FontWeight.BOLD, color=ft.Colors.WHITE),
+                    ft.Text(f"¡Hola de nuevo, {user_name}!", size=22, weight=ft.FontWeight.BOLD, color=ft.Colors.WHITE),
                     ft.Text("Resumen general del estado operativo de la finca.", size=13, color=ft.Colors.GREY_400),
                 ]
             ),

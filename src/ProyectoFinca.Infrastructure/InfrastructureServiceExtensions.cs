@@ -83,6 +83,13 @@ public static class InfrastructureServiceExtensions
         services.AddScoped<IJwtService,      JwtService>();
         services.AddScoped<IPasswordService, PasswordService>();
 
+        // -----------------------------------------------
+        // Facturación Electrónica DIAN (Colombia)
+        // -----------------------------------------------
+        services.Configure<DianOptions>(
+            configuration.GetSection(DianOptions.SectionName));
+        services.AddScoped<IFacturacionElectronicaService, FacturacionElectronicaMockService>();
+
         return services;
     }
 }

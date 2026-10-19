@@ -70,7 +70,17 @@ CATEGORIAS_SERVICIOS = [
 ]
 
 # Roles permitidos en el sistema
-ROLES = ["Admin", "Cajero", "Mesero"]
+ROLES = ["Admin", "Cajero", "Mesero", "Restaurante"]
+
+# Métodos de pago colombianos
+METODOS_PAGO = [
+    {"id": 0, "nombre": "Efectivo", "icono": ft.Icons.PAYMENTS_OUTLINED},
+    {"id": 1, "nombre": "Nequi", "icono": ft.Icons.PHONE_ANDROID_OUTLINED},
+    {"id": 2, "nombre": "Daviplata", "icono": ft.Icons.WALLET_OUTLINED},
+    {"id": 3, "nombre": "Tarjeta de Crédito", "icono": ft.Icons.CREDIT_CARD_OUTLINED},
+    {"id": 4, "nombre": "Tarjeta de Débito", "icono": ft.Icons.CREDIT_CARD},
+    {"id": 5, "nombre": "Transferencia Bancaria", "icono": ft.Icons.ACCOUNT_BALANCE_OUTLINED},
+]
 
 # Estados de una orden de venta y sus nombres amigables
 ORDER_STATUS_MAP = {

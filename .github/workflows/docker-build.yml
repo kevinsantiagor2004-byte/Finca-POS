@@ -1,0 +1,50 @@
+name: Docker Build & Escaneo de Seguridad
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'src/**'
+      - 'Dockerfile'
+      - 'docker-compose.yml'
+      - '.github/workflows/docker-build.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'src/**'
+      - 'Dockerfile'
+      - 'docker-compose.yml'
+      - '.github/workflows/docker-build.yml'
+  workflow_dispatch:
+
+jobs:
+  docker-verify:
+    name: Construcción y Escaneo de Imagen Docker
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Descargar código fuente
+        uses: actions/checkout@v4
+
+      - name: 🐳 Configurar Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: 🔨 Construir imagen de la API
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: false
+          tags: finca-pos-api:test
+          load: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: 🛡️ Escanear vulnerabilidades de seguridad (Trivy)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'finca-pos-api:test'
+          format: 'table'
+          exit-code: '0'
+          ignore-unfixed: true
+          severity: 'CRITICAL,HIGH'

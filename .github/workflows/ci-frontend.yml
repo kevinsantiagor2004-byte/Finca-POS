@@ -1,0 +1,57 @@
+name: CI Frontend Python (Flet)
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'frontend_flet/**'
+      - '.github/workflows/ci-frontend.yml'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'frontend_flet/**'
+      - '.github/workflows/ci-frontend.yml'
+  workflow_dispatch:
+
+jobs:
+  validate-frontend:
+    name: Validar Sintaxis y Dependencias Flet
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Descargar código fuente
+        uses: actions/checkout@v4
+
+      - name: 🐍 Configurar Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: 📦 Caché de pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('frontend_flet/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: 🔄 Instalar dependencias del cliente Flet
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r frontend_flet/requirements.txt
+          pip install flake8
+
+      - name: 🔍 Compilación de sintaxis bytecode (todos los módulos)
+        run: |
+          python -m py_compile frontend_flet/main.py
+          python -m py_compile frontend_flet/config.py
+          python -m py_compile frontend_flet/services/api_client.py
+          python -m py_compile frontend_flet/components/*.py
+          python -m py_compile frontend_flet/views/*.py
+
+      - name: 🧹 Análisis de calidad de código (Flake8)
+        run: |
+          # Detener si hay errores críticos de sintaxis o variables indefinidas
+          flake8 frontend_flet/ --count --select=E9,F63,F7,F82 --show-source --statistics
+          # Advertencias de estilo (sin fallar el build)
+          flake8 frontend_flet/ --count --exit-zero --max-complexity=25 --max-line-length=160 --statistics

@@ -29,15 +29,18 @@ public class SalesOrdersController : BaseApiController
 {
     private readonly IApplicationDbContext _context;
     private readonly IAuditLogRepository _auditRepo;
+    private readonly IFacturacionElectronicaService _dianService;
     private readonly decimal _defaultTaxRate;
 
     public SalesOrdersController(
         IApplicationDbContext context,
         IAuditLogRepository auditRepo,
+        IFacturacionElectronicaService dianService,
         IOptions<PosOptions> posOptions)
     {
         _context        = context;
         _auditRepo      = auditRepo;
+        _dianService    = dianService;
         _defaultTaxRate = posOptions.Value.PorcentajeImpuestoDefault;
     }
 
@@ -62,7 +65,7 @@ public class SalesOrdersController : BaseApiController
     /// Los meseros solo ven sus propias órdenes; Admin y Cajero ven todas.
     /// </summary>
     [HttpGet]
-    [Authorize(Roles = "Admin,Cajero,Mesero")]
+    [Authorize(Roles = "Admin,Cajero,Mesero,Restaurante")]
     [ProducesResponseType(typeof(PagedResponseDto<SalesOrderResponseDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetAll([FromQuery] SalesOrderFilterDto filtro)
     {
@@ -80,6 +83,10 @@ public class SalesOrdersController : BaseApiController
         // Los Meseros solo ven sus propias órdenes
         if (User.IsInRole("Mesero"))
             query = query.Where(so => so.UserId == CurrentUserId);
+
+        // El rol Restaurante ve las órdenes Facturadas por el cajero para despacho de alimentos/almuerzos
+        if (User.IsInRole("Restaurante"))
+            query = query.Where(so => so.Estado == SalesOrderStatus.Facturada);
 
         // -----------------------------------------------
         // Filtros usando los índices optimizados en BD
@@ -147,7 +154,7 @@ public class SalesOrdersController : BaseApiController
 
     /// <summary>Obtiene una orden completa con desglose de servicios y precios.</summary>
     [HttpGet("{id:guid}")]
-    [Authorize(Roles = "Admin,Cajero,Mesero")]
+    [Authorize(Roles = "Admin,Cajero,Mesero,Restaurante")]
     [ProducesResponseType(typeof(SalesOrderResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -249,7 +256,8 @@ public class SalesOrdersController : BaseApiController
             return BadRequest(new { error = "El descuento no puede superar el subtotal." });
 
         var impuesto = dto.PorcentajeImpuesto ?? _defaultTaxRate;
-        var total    = (subtotal - descuento) * (1 + impuesto);
+        var propina  = dto.Propina;
+        var total    = (subtotal - descuento) * (1 + impuesto) + propina;
 
         // 5. Generar número de orden único: ORD-{AÑO}-{SECUENCIAL:D5}
         var anio  = DateTime.UtcNow.Year;
@@ -268,6 +276,8 @@ public class SalesOrdersController : BaseApiController
             Subtotal           = subtotal,
             Descuento          = descuento,
             PorcentajeImpuesto = impuesto,
+            Propina            = propina,
+            MetodoPago         = dto.MetodoPago,
             Total              = Math.Round(total, 2),
             Estado             = SalesOrderStatus.Pendiente,
             NombreCliente      = dto.NombreCliente,
@@ -364,6 +374,21 @@ public class SalesOrdersController : BaseApiController
         var estadoAnterior = order.Estado;
         order.Estado = dto.NuevoEstado;
 
+        // Si pasa a Facturada y no tiene CUFE, emitir ante la DIAN
+        if (dto.NuevoEstado == SalesOrderStatus.Facturada && string.IsNullOrEmpty(order.Cufe))
+        {
+            var dianResp = await _dianService.EmitirFacturaAsync(order);
+            if (dianResp.Exitoso)
+            {
+                order.Cufe              = dianResp.Cufe;
+                order.QrCodeUrl         = dianResp.QrCodeUrl;
+                order.DianEstado        = dianResp.Estado;
+                order.DianFechaEmision  = dianResp.FechaEmision;
+                order.DianAmbiente      = dianResp.Ambiente;
+                order.DianNumeroFactura = dianResp.NumeroFactura;
+            }
+        }
+
         // Agregar motivo de cancelación a observaciones para auditoría
         if (dto.NuevoEstado == SalesOrderStatus.Cancelada && !string.IsNullOrWhiteSpace(dto.Motivo))
             order.Observaciones = $"[CANCELADO] {dto.Motivo}\n{order.Observaciones}".Trim();
@@ -388,7 +413,74 @@ public class SalesOrdersController : BaseApiController
             {
                 order.NumeroOrden,
                 order.Total,
-                order.NombreCliente
+                order.NombreCliente,
+                order.Cufe
+            }
+        });
+
+        return Ok(MapToResponse(order));
+    }
+
+    // =========================================================
+    // POST /api/sales-orders/{id}/facturar-dian
+    // =========================================================
+
+    /// <summary>
+    /// Transmite y valida la orden de venta como Factura Electrónica / Tiquete POS ante la DIAN.
+    /// Asigna CUFE, URL con código QR oficial y actualiza el estado a Facturada.
+    /// </summary>
+    [HttpPost("{id:guid}/facturar-dian")]
+    [Authorize(Roles = "Admin,Cajero")]
+    [ProducesResponseType(typeof(SalesOrderResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> FacturarDian(Guid id)
+    {
+        var order = await _context.SalesOrders
+            .Include(so => so.Usuario)
+            .Include(so => so.Plan)
+            .Include(so => so.SalesOrderServices).ThenInclude(sos => sos.Service)
+            .FirstOrDefaultAsync(so => so.Id == id);
+
+        if (order is null) return NotFoundResponse("SalesOrder", id);
+
+        if (order.Estado == SalesOrderStatus.Cancelada)
+            return BadRequest(new { error = "No se puede facturar una orden cancelada." });
+
+        var dianResp = await _dianService.EmitirFacturaAsync(order);
+        if (!dianResp.Exitoso)
+            return BadRequest(new { error = $"Error en transmisión DIAN: {dianResp.Mensaje}" });
+
+        var estadoAnterior      = order.Estado;
+        order.Estado            = SalesOrderStatus.Facturada;
+        order.Cufe              = dianResp.Cufe;
+        order.QrCodeUrl         = dianResp.QrCodeUrl;
+        order.DianEstado        = dianResp.Estado;
+        order.DianFechaEmision  = dianResp.FechaEmision;
+        order.DianAmbiente      = dianResp.Ambiente;
+        order.DianNumeroFactura = dianResp.NumeroFactura;
+
+        await _context.SaveChangesAsync();
+
+        await _auditRepo.LogEventAsync(new AuditLogEntry
+        {
+            EventType      = "DianInvoiceEmitted",
+            EntityName     = "SalesOrder",
+            EntityId       = order.Id.ToString(),
+            UserId         = CurrentUserId,
+            UserName       = CurrentUserName,
+            UserRole       = User.FindFirstValue(ClaimTypes.Role) ?? "Usuario",
+            Timestamp      = DateTime.UtcNow,
+            ClientPlatform = GetClientPlatform(),
+            PreviousState  = estadoAnterior.ToString(),
+            NewState       = SalesOrderStatus.Facturada.ToString(),
+            Details        = new
+            {
+                order.NumeroOrden,
+                order.DianNumeroFactura,
+                order.Cufe,
+                order.Total,
+                order.DianAmbiente
             }
         });
 
@@ -437,13 +529,13 @@ public class SalesOrdersController : BaseApiController
             return (true, string.Empty);
         }
 
-        // Flujo hacia adelante
+        // Flujo hacia adelante flexible (permite cobro inmediato / pago por adelantado)
         var transicionesValidas = new Dictionary<SalesOrderStatus, SalesOrderStatus[]>
         {
-            [SalesOrderStatus.Pendiente]   = [SalesOrderStatus.EnProceso,  SalesOrderStatus.Cancelada],
-            [SalesOrderStatus.EnProceso]   = [SalesOrderStatus.Completada, SalesOrderStatus.Cancelada],
+            [SalesOrderStatus.Pendiente]   = [SalesOrderStatus.EnProceso, SalesOrderStatus.Completada, SalesOrderStatus.Facturada, SalesOrderStatus.Cancelada],
+            [SalesOrderStatus.EnProceso]   = [SalesOrderStatus.Completada, SalesOrderStatus.Facturada, SalesOrderStatus.Cancelada],
             [SalesOrderStatus.Completada]  = [SalesOrderStatus.Facturada,  SalesOrderStatus.Cancelada],
-            [SalesOrderStatus.Facturada]   = [], // Estado final
+            [SalesOrderStatus.Facturada]   = [], // Estado final fiscal
             [SalesOrderStatus.Cancelada]   = [], // Estado final
         };
 
@@ -493,6 +585,14 @@ public class SalesOrdersController : BaseApiController
                 PrecioCobrado  = sos.PrecioCobrado,
                 EraObligatorio = sos.EraObligatorio
             })
-            .ToList()
+            .ToList(),
+        MetodoPago         = o.MetodoPago.ToString(),
+        Propina            = o.Propina,
+        Cufe               = o.Cufe,
+        QrCodeUrl          = o.QrCodeUrl,
+        DianEstado         = o.DianEstado,
+        DianFechaEmision   = o.DianFechaEmision,
+        DianAmbiente       = o.DianAmbiente,
+        DianNumeroFactura  = o.DianNumeroFactura
     };
 }

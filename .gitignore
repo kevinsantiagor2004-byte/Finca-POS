@@ -65,3 +65,5 @@ env/
 
 frontend_flet/build/
 flet_log.txt
+*smtp*.json
+*.html

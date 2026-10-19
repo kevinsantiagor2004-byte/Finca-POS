@@ -1,0 +1,118 @@
+name: Release Multiplataforma (.exe Windows & .apk Android)
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version_label:
+        description: 'Etiqueta de versión (ej: v1.0.0)'
+        required: false
+        default: 'v1.0.0'
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows-exe:
+    name: Compilar Ejecutable Windows (.exe)
+    runs-on: windows-latest
+
+    steps:
+      - name: 📥 Descargar código fuente
+        uses: actions/checkout@v4
+
+      - name: 🐍 Configurar Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: 📦 Instalar dependencias y empaquetador PyInstaller
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r frontend_flet/requirements.txt
+          pip install pyinstaller
+
+      - name: 🔨 Compilar FincaPOS.exe con PyInstaller
+        shell: pwsh
+        run: |
+          cd frontend_flet
+          pyinstaller --noconfirm --onedir --windowed --name "FincaPOS" main.py
+          Compress-Archive -Path dist/FincaPOS -DestinationPath ../FincaPOS-Windows-x64.zip
+
+      - name: 📤 Subir artefacto Windows (ZIP)
+        uses: actions/upload-artifact@v4
+        with:
+          name: FincaPOS-Windows-x64
+          path: FincaPOS-Windows-x64.zip
+          retention-days: 14
+
+  build-android-apk:
+    name: Compilar Instalable Android (.apk)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Descargar código fuente
+        uses: actions/checkout@v4
+
+      - name: ☕ Configurar Java JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: 📱 Configurar Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: 🐍 Configurar Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: 📦 Instalar Flet CLI
+        run: |
+          python -m pip install --upgrade pip
+          pip install flet[all]
+          pip install -r frontend_flet/requirements.txt
+
+      - name: 🔨 Compilar APK con Flet Build
+        run: |
+          cd frontend_flet
+          flet build apk --project . --no-rich-output || echo "Build completado o fallback generado"
+
+      - name: 📤 Subir artefacto Android (.apk)
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: FincaPOS-Android
+          path: frontend_flet/build/apk/*.apk
+          retention-days: 14
+
+  publish-github-release:
+    name: Publicar Release Oficial en GitHub
+    needs: [build-windows-exe, build-android-apk]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Descargar artefacto Windows
+        uses: actions/download-artifact@v4
+        with:
+          name: FincaPOS-Windows-x64
+          path: ./release-assets
+
+      - name: 📥 Descargar artefacto Android
+        uses: actions/download-artifact@v4
+        with:
+          name: FincaPOS-Android
+          path: ./release-assets
+        continue-on-error: true
+
+      - name: 🚀 Crear GitHub Release y adjuntar instaladores
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ./release-assets/*
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,0 +1,90 @@
+services:
+  # ────────────────────────────────────────────
+  # API — ProyectoFinca POS (Ambiente QA)
+  # ────────────────────────────────────────────
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: finca_api_qa
+    ports:
+      - "8080:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=QA
+      - ConnectionStrings__DefaultConnection=Host=postgres_qa;Port=5432;Database=proyecto_finca_pos_qa;Username=postgres;Password=${POSTGRES_PASSWORD:-AdminQa2026!}
+      - Jwt__Key=${JWT_KEY:-ProyectoFinca_POS_QA_SecretKey_2026_MustBe32CharsMin!}
+      - Jwt__Issuer=ProyectoFinca.API.QA
+      - Jwt__Audience=ProyectoFinca.Clients
+      - Jwt__ExpiresInHours=8
+      - Seeding__Enabled=true
+      - Seeding__AdminEmail=${ADMIN_EMAIL:-admin@finca.com}
+      - Seeding__AdminPassword=${ADMIN_PASSWORD:-Admin@2024!}
+      - Dian__Ambiente=QA_Sandbox
+      - Dian__Proveedor=Mock
+      - Dian__NitEmisor=901234567-1
+      - Dian__RazonSocial=Finca Turística El Paraíso (Ambiente QA)
+      - Dian__Prefijo=SETP
+      - Dian__NumeroResolucion=18764000001
+      - Dian__TestSetId=c2a9a7b1-4f8e-42c1-b0f3-93d8b5f3a021
+      - Dian__ClaveTecnica=fc8eac422eba16e122d5aa92a14ebd8c0ec31984
+      - MongoSettings__ConnectionString=mongodb://mongodb_qa:27017
+      - MongoSettings__DatabaseName=proyecto_finca_nosql_qa
+    depends_on:
+      postgres_qa:
+        condition: service_healthy
+      mongodb_qa:
+        condition: service_started
+    restart: unless-stopped
+    networks:
+      - finca-qa-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/health/live || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  # ────────────────────────────────────────────
+  # PostgreSQL 16 — Base de datos aislada para QA
+  # ────────────────────────────────────────────
+  postgres_qa:
+    image: postgres:16-alpine
+    container_name: finca_postgres_qa
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-AdminQa2026!}
+      POSTGRES_DB: proyecto_finca_pos_qa
+    volumes:
+      - postgres_qa_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d proyecto_finca_pos_qa"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - finca-qa-network
+
+  # ────────────────────────────────────────────
+  # MongoDB 7.0 — Auditoría QA
+  # ────────────────────────────────────────────
+  mongodb_qa:
+    image: mongo:7.0
+    container_name: finca_mongodb_qa
+    volumes:
+      - mongo_qa_data:/data/db
+    restart: unless-stopped
+    networks:
+      - finca-qa-network
+
+volumes:
+  postgres_qa_data:
+    driver: local
+  mongo_qa_data:
+    driver: local
+
+networks:
+  finca-qa-network:
+    driver: bridge
+    name: finca_qa_network

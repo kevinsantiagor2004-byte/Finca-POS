@@ -55,6 +55,10 @@ class ApiClient:
     def is_mesero(self) -> bool:
         return self.user_role == "Mesero"
 
+    @property
+    def is_restaurante(self) -> bool:
+        return self.user_role == "Restaurante"
+
     def _get_headers(self) -> Dict[str, str]:
         headers = {"Content-Type": "application/json"}
         if self.token:
@@ -66,12 +70,6 @@ class ApiClient:
         try:
             data = response.json()
             if isinstance(data, dict):
-                if "error" in data:
-                    return str(data["error"])
-                if "message" in data:
-                    return str(data["message"])
-                if "title" in data:
-                    return str(data["title"])
                 if "errors" in data and isinstance(data["errors"], dict):
                     messages = []
                     for k, v in data["errors"].items():
@@ -79,7 +77,14 @@ class ApiClient:
                             messages.extend(v)
                         else:
                             messages.append(str(v))
-                    return " | ".join(messages)
+                    if messages:
+                        return " | ".join(messages)
+                if "error" in data:
+                    return str(data["error"])
+                if "message" in data:
+                    return str(data["message"])
+                if "title" in data:
+                    return str(data["title"])
             return f"Error {response.status_code}: {response.text}"
         except Exception:
             return f"Error HTTP {response.status_code}"
@@ -278,6 +283,16 @@ class ApiClient:
                 payload["motivoCancelacion"] = motivo_cancelacion
             res = self._client.patch(f"/SalesOrders/{order_id}/estado", json=payload, headers=self._get_headers())
             if res.status_code == 200:
+                return True, res.json()
+            return False, self._parse_error(res)
+        except Exception as e:
+            return False, str(e)
+
+    def facturar_dian(self, order_id: str) -> Tuple[bool, Dict[str, Any] | str]:
+        """Emite una orden de venta ante la DIAN como factura electrónica / tiquete POS."""
+        try:
+            res = self._client.post(f"/SalesOrders/{order_id}/facturar-dian", headers=self._get_headers())
+            if res.status_code in (200, 201):
                 return True, res.json()
             return False, self._parse_error(res)
         except Exception as e:

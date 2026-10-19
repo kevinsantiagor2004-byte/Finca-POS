@@ -104,6 +104,44 @@ public class SalesOrderConfiguration : IEntityTypeConfiguration<SalesOrder>
             .HasColumnType("numeric(12, 2)")
             .IsRequired();
 
+        builder.Property(so => so.MetodoPago)
+            .HasColumnName("metodo_pago")
+            .HasConversion<string>()
+            .HasMaxLength(30)
+            .HasDefaultValue(PaymentMethod.Efectivo);
+
+        builder.Property(so => so.Propina)
+            .HasColumnName("propina")
+            .HasColumnType("numeric(12, 2)")
+            .HasDefaultValue(0m);
+
+        // -----------------------------------------------
+        // Facturación Electrónica DIAN
+        // -----------------------------------------------
+        builder.Property(so => so.Cufe)
+            .HasColumnName("cufe")
+            .HasMaxLength(256);
+
+        builder.Property(so => so.QrCodeUrl)
+            .HasColumnName("qr_code_url")
+            .HasMaxLength(500);
+
+        builder.Property(so => so.DianEstado)
+            .HasColumnName("dian_estado")
+            .HasMaxLength(30);
+
+        builder.Property(so => so.DianFechaEmision)
+            .HasColumnName("dian_fecha_emision")
+            .HasColumnType("timestamptz");
+
+        builder.Property(so => so.DianAmbiente)
+            .HasColumnName("dian_ambiente")
+            .HasMaxLength(20);
+
+        builder.Property(so => so.DianNumeroFactura)
+            .HasColumnName("dian_numero_factura")
+            .HasMaxLength(50);
+
         // -----------------------------------------------
         // Estado
         // -----------------------------------------------

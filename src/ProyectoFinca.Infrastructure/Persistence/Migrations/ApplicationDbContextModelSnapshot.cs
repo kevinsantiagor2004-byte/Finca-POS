@@ -22,7 +22,7 @@ namespace ProyectoFinca.Infrastructure.Persistence.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "pos", "sales_order_status", new[] { "pendiente", "en_proceso", "completada", "facturada", "cancelada" });
-            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "pos", "user_role", new[] { "admin", "cajero", "mesero", "cliente" });
+            NpgsqlModelBuilderExtensions.HasPostgresEnum(modelBuilder, "pos", "user_role", new[] { "admin", "cajero", "mesero", "cliente", "restaurante" });
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
             modelBuilder.Entity("ProyectoFinca.Domain.Entities.Plan", b =>
@@ -135,11 +135,35 @@ namespace ProyectoFinca.Infrastructure.Persistence.Migrations
                         .HasColumnName("created_at")
                         .HasDefaultValueSql("NOW() AT TIME ZONE 'UTC'");
 
+                    b.Property<string>("Cufe")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("cufe");
+
                     b.Property<decimal>("Descuento")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("numeric(12, 2)")
                         .HasDefaultValue(0m)
                         .HasColumnName("descuento");
+
+                    b.Property<string>("DianAmbiente")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("dian_ambiente");
+
+                    b.Property<string>("DianEstado")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("dian_estado");
+
+                    b.Property<DateTime?>("DianFechaEmision")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("dian_fecha_emision");
+
+                    b.Property<string>("DianNumeroFactura")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("dian_numero_factura");
 
                     b.Property<string>("Estado")
                         .IsRequired()
@@ -164,6 +188,14 @@ namespace ProyectoFinca.Infrastructure.Persistence.Migrations
                         .HasColumnType("boolean")
                         .HasDefaultValue(false)
                         .HasColumnName("is_deleted");
+
+                    b.Property<string>("MetodoPago")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasDefaultValue("Efectivo")
+                        .HasColumnName("metodo_pago");
 
                     b.Property<string>("NombreCliente")
                         .IsRequired()
@@ -197,6 +229,17 @@ namespace ProyectoFinca.Infrastructure.Persistence.Migrations
                         .HasColumnType("numeric(5, 4)")
                         .HasDefaultValue(0m)
                         .HasColumnName("porcentaje_impuesto");
+
+                    b.Property<decimal>("Propina")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("numeric(12, 2)")
+                        .HasDefaultValue(0m)
+                        .HasColumnName("propina");
+
+                    b.Property<string>("QrCodeUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("qr_code_url");
 
                     b.Property<decimal>("Subtotal")
                         .HasColumnType("numeric(12, 2)")

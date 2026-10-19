@@ -58,6 +58,22 @@ public class SalesOrderResponseDto
     public string? Observaciones { get; set; }
 
     // -----------------------------------------------
+    // Método de Pago & Propina (Colombia)
+    // -----------------------------------------------
+    public string MetodoPago { get; set; } = "Efectivo";
+    public decimal Propina { get; set; }
+
+    // -----------------------------------------------
+    // Facturación Electrónica DIAN
+    // -----------------------------------------------
+    public string? Cufe { get; set; }
+    public string? QrCodeUrl { get; set; }
+    public string? DianEstado { get; set; }
+    public DateTime? DianFechaEmision { get; set; }
+    public string? DianAmbiente { get; set; }
+    public string? DianNumeroFactura { get; set; }
+
+    // -----------------------------------------------
     // Relaciones
     // -----------------------------------------------
     public Guid UserId { get; set; }

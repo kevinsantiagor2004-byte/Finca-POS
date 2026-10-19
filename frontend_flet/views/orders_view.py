@@ -6,7 +6,7 @@ Incluye motor de cotización en vivo (cálculo de planes + servicios + impuestos
 import flet as ft
 from services.api_client import ApiClient
 from components.toast import show_toast
-from config import ORDER_STATUS_MAP, format_cop
+from config import ORDER_STATUS_MAP, format_cop, METODOS_PAGO
 
 
 def build_orders_content(page: ft.Page) -> ft.Control:
@@ -119,6 +119,25 @@ def build_orders_content(page: ft.Page) -> ft.Control:
                                                         bgcolor=cfg["color"],
                                                         padding=ft.Padding.symmetric(horizontal=8, vertical=2),
                                                         border_radius=8,
+                                                    ),
+                                                    ft.Container(
+                                                        content=ft.Text(str(ord_item.get("metodoPago", "Efectivo")), size=10, weight=ft.FontWeight.BOLD, color=ft.Colors.CYAN_100),
+                                                        bgcolor=ft.Colors.CYAN_900,
+                                                        padding=ft.Padding.symmetric(horizontal=8, vertical=2),
+                                                        border_radius=8,
+                                                    ),
+                                                    ft.Container(
+                                                        content=ft.Row(
+                                                            spacing=3,
+                                                            controls=[
+                                                                ft.Icon(ft.Icons.VERIFIED, size=12, color=ft.Colors.WHITE),
+                                                                ft.Text(f"DIAN {ord_item.get('dianNumeroFactura')}", size=10, weight=ft.FontWeight.BOLD, color=ft.Colors.WHITE),
+                                                            ]
+                                                        ),
+                                                        bgcolor=ft.Colors.PURPLE_800,
+                                                        padding=ft.Padding.symmetric(horizontal=8, vertical=2),
+                                                        border_radius=8,
+                                                        visible=bool(ord_item.get("dianNumeroFactura"))
                                                     )
                                                 ]
                                             ),
@@ -215,14 +234,68 @@ def build_orders_content(page: ft.Page) -> ft.Control:
                 ft.Text(obs_text, size=12, color=ft.Colors.GREY_300, italic=True),
             ])
 
+        metodo_pago = ord_item.get("metodoPago", "Efectivo")
+        propina = ord_item.get("propina", 0)
+        dian_num = ord_item.get("dianNumeroFactura")
+        cufe = ord_item.get("cufe")
+        qr_url = ord_item.get("qrCodeUrl")
+
         detail_controls.extend([
             ft.Divider(color=ft.Colors.GREY_800),
+            ft.Row(alignment=ft.MainAxisAlignment.SPACE_BETWEEN, controls=[ft.Text("Método de Pago:"), ft.Text(str(metodo_pago), weight=ft.FontWeight.BOLD, color=ft.Colors.CYAN_300)]),
             ft.Row(alignment=ft.MainAxisAlignment.SPACE_BETWEEN, controls=[ft.Text("Subtotal:"), ft.Text(format_cop(ord_item.get("subtotal", 0)))]),
             ft.Row(alignment=ft.MainAxisAlignment.SPACE_BETWEEN, controls=[ft.Text("Descuento:"), ft.Text(f"-{format_cop(ord_item.get('descuento', 0))}", color=ft.Colors.AMBER_400)]),
-            ft.Row(alignment=ft.MainAxisAlignment.SPACE_BETWEEN, controls=[ft.Text("IVA (13%):"), ft.Text(format_cop(ord_item.get("montoImpuesto", 0)))]),
+            ft.Row(alignment=ft.MainAxisAlignment.SPACE_BETWEEN, controls=[ft.Text("Impuesto (IVA/INC):"), ft.Text(format_cop(ord_item.get("montoImpuesto", 0)))]),
+        ])
+        if propina > 0:
+            detail_controls.append(
+                ft.Row(alignment=ft.MainAxisAlignment.SPACE_BETWEEN, controls=[ft.Text("Propina Voluntaria:"), ft.Text(format_cop(propina), color=ft.Colors.GREEN_300)])
+            )
+        detail_controls.extend([
             ft.Divider(color=ft.Colors.GREY_800),
             ft.Row(alignment=ft.MainAxisAlignment.SPACE_BETWEEN, controls=[ft.Text("TOTAL:", weight=ft.FontWeight.BOLD, size=16), ft.Text(format_cop(ord_item.get("total", 0)), weight=ft.FontWeight.BOLD, size=18, color=ft.Colors.GREEN_400)]),
         ])
+
+        if dian_num and cufe:
+            detail_controls.extend([
+                ft.Divider(color=ft.Colors.GREEN_800),
+                ft.Container(
+                    content=ft.Column(
+                        spacing=6,
+                        controls=[
+                            ft.Row([
+                                ft.Icon(ft.Icons.VERIFIED, color=ft.Colors.GREEN_400, size=18),
+                                ft.Text(f"DIAN Factura: {dian_num}", weight=ft.FontWeight.BOLD, color=ft.Colors.GREEN_300, size=13),
+                            ]),
+                            ft.Text(f"CUFE: {cufe[:24]}...", size=10, color=ft.Colors.GREY_400),
+                            ft.Text(f"Ambiente: {ord_item.get('dianAmbiente', 'QA_Sandbox')}", size=11, color=ft.Colors.AMBER_300),
+                            ft.TextButton(
+                                "Verificar en Catálogo DIAN (QR)",
+                                icon=ft.Icons.QR_CODE_2,
+                                url=qr_url,
+                                style=ft.ButtonStyle(color=ft.Colors.GREEN_400)
+                            )
+                        ]
+                    ),
+                    bgcolor=ft.Colors.SURFACE_CONTAINER_HIGHEST,
+                    padding=10,
+                    border_radius=8
+                )
+            ])
+
+        detail_actions = [ft.TextButton("Cerrar", on_click=lambda _: page.pop_dialog())]
+        if is_admin_or_cajero and not cufe and ord_item.get("estado") != "Cancelada":
+            def do_facturar_dian(e):
+                page.pop_dialog()
+                show_toast(page, "Transmitiendo a la DIAN...")
+                ok, res = client.facturar_dian(ord_item.get("id"))
+                if ok:
+                    show_toast(page, f"✅ Factura {res.get('dianNumeroFactura')} aprobada por la DIAN")
+                    load_orders()
+                else:
+                    show_toast(page, f"Error DIAN: {res}", is_error=True)
+
+            detail_actions.insert(0, ft.FilledButton("⚡ Facturar DIAN", icon=ft.Icons.RECEIPT, on_click=do_facturar_dian, style=ft.ButtonStyle(bgcolor=ft.Colors.GREEN_700)))
 
         dlg = ft.AlertDialog(
             title=ft.Text(f"Detalle: {ord_item.get('numeroOrden')}"),
@@ -233,7 +306,7 @@ def build_orders_content(page: ft.Page) -> ft.Control:
                 scroll=ft.ScrollMode.AUTO,
                 controls=detail_controls
             ),
-            actions=[ft.TextButton("Cerrar", on_click=lambda _: page.pop_dialog())]
+            actions=detail_actions
         )
         page.show_dialog(dlg)
 
@@ -241,12 +314,21 @@ def build_orders_content(page: ft.Page) -> ft.Control:
 
     def open_change_status_dialog(ord_item: dict):
         est_actual = ord_item.get("estado", "Pendiente")
-        posibles_estados = ["Pendiente", "EnProceso", "Completada", "Facturada", "Cancelada"]
+        if est_actual in ("Facturada", "Cancelada"):
+            show_toast(page, f"Esta orden ya está '{est_actual}' (estado final). Las órdenes facturadas con la DIAN no se pueden modificar.", is_error=True)
+            return
+
+        transiciones = {
+            "Pendiente": ["EnProceso", "Completada", "Facturada", "Cancelada"],
+            "EnProceso": ["Completada", "Facturada", "Cancelada"],
+            "Completada": ["Facturada", "Cancelada"]
+        }
+        posibles_estados = transiciones.get(est_actual, ["Cancelada"])
 
         dropdown_estado = ft.Dropdown(
             label="Nuevo Estado",
             options=[ft.dropdown.Option(e) for e in posibles_estados],
-            value=est_actual
+            value=posibles_estados[0]
         )
         motivo_field = ft.TextField(label="Motivo de Cancelación", visible=False, multiline=True)
 
@@ -299,6 +381,12 @@ def build_orders_content(page: ft.Page) -> ft.Control:
         cliente_field = ft.TextField(label="Nombre del Cliente *", autofocus=True)
         huespedes_field = ft.TextField(label="N° de Huéspedes", value="1", keyboard_type=ft.KeyboardType.NUMBER)
         descuento_field = ft.TextField(label="Descuento (COP)", value="0", keyboard_type=ft.KeyboardType.NUMBER)
+        propina_field = ft.TextField(label="Propina Voluntaria (COP)", value="0", keyboard_type=ft.KeyboardType.NUMBER)
+        metodo_pago_dropdown = ft.Dropdown(
+            label="Método de Pago",
+            options=[ft.dropdown.Option(key=str(m["id"]), text=m["nombre"]) for m in METODOS_PAGO],
+            value="0"
+        )
         observaciones_field = ft.TextField(label="Notas / Observaciones", multiline=True)
 
         plan_options = [ft.dropdown.Option(key=p["id"], text=f"{p['nombre']} — {format_cop(p['precioBase'])}") for p in planes]
@@ -337,14 +425,22 @@ def build_orders_content(page: ft.Page) -> ft.Control:
             except ValueError:
                 desc = 0.0
 
+            raw_propina = (propina_field.value or "").replace(".", "").replace(" ", "")
+            try:
+                propina = float(raw_propina) if raw_propina else 0.0
+            except ValueError:
+                propina = 0.0
+
             base_imponible = max(0.0, subtotal - desc) if desc >= 0 else subtotal
-            iva = base_imponible * 0.13
-            total = base_imponible + iva
+            iva = base_imponible * 0.19
+            total = base_imponible + iva + propina
 
             subtotal_text.value = f"Subtotal: {format_cop(subtotal)}"
-            iva_text.value = f"IVA (13%): {format_cop(iva)}"
+            iva_text.value = f"IVA (19%): {format_cop(iva)}"
             total_text.value = format_cop(total)
             page.update()
+
+        propina_field.on_change = lambda _: recalculate_price()
 
         def on_plan_change(e):
             selected_optional_ids.clear()
@@ -428,11 +524,19 @@ def build_orders_content(page: ft.Page) -> ft.Control:
                 show_toast(page, "El descuento no puede ser mayor que el subtotal.", is_error=True)
                 return
 
+            raw_propina = (propina_field.value or "").replace(".", "").replace(" ", "")
+            try:
+                p_val = float(raw_propina) if raw_propina else 0.0
+            except ValueError:
+                p_val = 0.0
+
             payload = {
                 "planId": plan_dropdown.value,
                 "nombreCliente": cliente_field.value.strip(),
                 "numeroHuespedes": h_val,
                 "descuento": d_val,
+                "metodoPago": int(metodo_pago_dropdown.value or "0"),
+                "propina": p_val,
                 "observaciones": observaciones_field.value.strip() if observaciones_field.value else None,
                 "serviciosOpcionalesIds": list(selected_optional_ids)
             }
@@ -456,6 +560,7 @@ def build_orders_content(page: ft.Page) -> ft.Control:
                     controls=[
                         cliente_field,
                         ft.Row(spacing=8, controls=[huespedes_field, descuento_field]),
+                        ft.Row(spacing=8, controls=[metodo_pago_dropdown, propina_field]),
                         plan_dropdown,
                         ft.Text("Servicios del Plan:", size=12, weight=ft.FontWeight.BOLD, color=ft.Colors.GREY_300),
                         services_checkbox_container,

@@ -1,0 +1,61 @@
+name: CI Backend .NET 8 & Pruebas
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'src/**'
+      - 'tests/**'
+      - '.github/workflows/ci-backend.yml'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'src/**'
+      - 'tests/**'
+      - '.github/workflows/ci-backend.yml'
+  workflow_dispatch:
+
+jobs:
+  build-and-test:
+    name: Compilar y Ejecutar Pruebas Unitarias
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Descargar código fuente
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Configurar .NET 8 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: 📦 Caché de dependencias NuGet
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: 🔄 Restaurar paquetes NuGet
+        run: dotnet restore
+
+      - name: 🔨 Compilar solución en modo Release
+        run: dotnet build --no-restore --configuration Release
+
+      - name: 🧪 Ejecutar pruebas unitarias (.NET)
+        run: >
+          dotnet test
+          --no-build
+          --configuration Release
+          --verbosity normal
+          --collect:"XPlat Code Coverage"
+          --results-directory ./TestResults
+
+      - name: 🗄️ Verificar migraciones de Entity Framework Core
+        run: |
+          dotnet tool install --global dotnet-ef
+          dotnet ef migrations script 20260815190457_AddSalesOrderServices \
+            --project src/ProyectoFinca.Infrastructure \
+            --startup-project src/ProyectoFinca.API \
+            --idempotent

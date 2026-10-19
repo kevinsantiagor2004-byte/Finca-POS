@@ -90,6 +90,26 @@ services:
     profiles:
       - tools  # Solo se levanta con: docker compose --profile tools up
 
+  # ────────────────────────────────────────────
+  # Mongo Express — Interfaz web para gestionar MongoDB (NoSQL)
+  # Acceso: http://localhost:8081
+  # ────────────────────────────────────────────
+  mongo-express:
+    image: mongo-express:latest
+    container_name: finca_mongo_express
+    environment:
+      ME_CONFIG_MONGODB_URL: mongodb://mongodb:27017/
+      ME_CONFIG_BASICAUTH: "false"
+    ports:
+      - "8081:8081"
+    depends_on:
+      - mongodb
+    restart: unless-stopped
+    networks:
+      - finca-network
+    profiles:
+      - tools
+
 volumes:
   postgres_data:
     driver: local

@@ -21,13 +21,11 @@ public class CreateUsuarioDto
     public string Email { get; set; } = string.Empty;
 
     /// <summary>
-    /// Contraseña en texto plano. El sistema la convierte a hash antes de almacenarla.
-    /// Requisitos: mínimo 8 caracteres, al menos una mayúscula y un número.
+    /// Contraseña o PIN en texto plano. El sistema la convierte a hash antes de almacenarla.
+    /// Soporta PIN numérico (mínimo 4 dígitos) o contraseña alfanumérica.
     /// </summary>
-    [Required(ErrorMessage = "La contraseña es obligatoria.")]
-    [StringLength(100, MinimumLength = 8, ErrorMessage = "La contraseña debe tener entre 8 y 100 caracteres.")]
-    [RegularExpression(@"^(?=.*[A-Z])(?=.*\d).+$",
-        ErrorMessage = "La contraseña debe tener al menos una mayúscula y un número.")]
+    [Required(ErrorMessage = "La contraseña o PIN es obligatorio.")]
+    [StringLength(100, MinimumLength = 4, ErrorMessage = "La contraseña o PIN debe tener entre 4 y 100 caracteres.")]
     public string Password { get; set; } = string.Empty;
 
     /// <summary>Teléfono de contacto (opcional).</summary>

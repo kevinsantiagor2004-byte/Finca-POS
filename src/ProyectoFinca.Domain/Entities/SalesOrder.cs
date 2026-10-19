@@ -73,6 +73,34 @@ public class SalesOrder : BaseEntity
     /// </summary>
     public decimal Total { get; set; }
 
+    /// <summary>Método de pago utilizado para liquidar la orden.</summary>
+    public PaymentMethod MetodoPago { get; set; } = PaymentMethod.Efectivo;
+
+    /// <summary>Propina voluntaria para el personal (no sujeta a IVA/impuestos en Colombia).</summary>
+    public decimal Propina { get; set; } = 0;
+
+    // -----------------------------------------------
+    // Facturación Electrónica DIAN (Colombia)
+    // -----------------------------------------------
+
+    /// <summary>Código Único de Factura Electrónica (CUFE) o Documento Equivalente POS (CUDE).</summary>
+    public string? Cufe { get; set; }
+
+    /// <summary>Enlace oficial de consulta QR expedido según lineamientos técnicos de la DIAN.</summary>
+    public string? QrCodeUrl { get; set; }
+
+    /// <summary>Estado de la factura ante la DIAN (ej. "Aprobada", "Pendiente", "Rechazada").</summary>
+    public string? DianEstado { get; set; }
+
+    /// <summary>Fecha y hora UTC en que la DIAN validó y emitió el documento.</summary>
+    public DateTime? DianFechaEmision { get; set; }
+
+    /// <summary>Ambiente DIAN donde se transmitió el documento ("QA_Sandbox" o "PRD_Produccion").</summary>
+    public string? DianAmbiente { get; set; }
+
+    /// <summary>Número fiscal de factura o tiquete POS emitido (ej. "SETP-99000001" o "POS-000123").</summary>
+    public string? DianNumeroFactura { get; set; }
+
     // -----------------------------------------------
     // Estado
     // -----------------------------------------------

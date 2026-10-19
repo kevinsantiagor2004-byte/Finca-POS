@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using ProyectoFinca.Domain.Enums;
 
 namespace ProyectoFinca.Application.DTOs.SalesOrders;
 
@@ -62,11 +63,18 @@ public class CreateSalesOrderDto
     public decimal Descuento { get; set; } = 0;
 
     /// <summary>
-    /// Porcentaje de impuesto a aplicar (Ej: 0.13 = 13%).
+    /// Porcentaje de impuesto a aplicar (Ej: 0.19 = 19% IVA, 0.08 = 8% Impoconsumo).
     /// Si no se especifica, el sistema usa el valor configurado por defecto.
     /// </summary>
     [Range(0, 1, ErrorMessage = "El porcentaje de impuesto debe estar entre 0 y 1 (0% a 100%).")]
     public decimal? PorcentajeImpuesto { get; set; }
+
+    /// <summary>Método de pago (Efectivo, Nequi, Daviplata, Tarjeta, etc.).</summary>
+    public PaymentMethod MetodoPago { get; set; } = PaymentMethod.Efectivo;
+
+    /// <summary>Propina voluntaria para el personal.</summary>
+    [Range(0, 999_999_999, ErrorMessage = "La propina no puede ser negativa.")]
+    public decimal Propina { get; set; } = 0;
 
     // -----------------------------------------------
     // Otros

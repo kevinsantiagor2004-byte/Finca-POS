@@ -33,6 +33,7 @@ def build_app_bar(page: ft.Page, title: str, on_logout_callback) -> ft.AppBar:
         "Admin": ft.Colors.PURPLE_400,
         "Cajero": ft.Colors.BLUE_400,
         "Mesero": ft.Colors.AMBER_400,
+        "Restaurante": ft.Colors.ORANGE_400,
     }
     badge_color = rol_colors.get(rol, ft.Colors.GREY_400)
 
@@ -114,8 +115,17 @@ def build_app_bar(page: ft.Page, title: str, on_logout_callback) -> ft.AppBar:
     )
 
 
-def get_nav_destinations(is_admin: bool) -> list[ft.NavigationRailDestination]:
+def get_nav_destinations(user_role: str = "", is_admin: bool = False) -> list[ft.NavigationRailDestination]:
     """Destinos para el NavigationRail lateral (desktop)."""
+    if user_role == "Restaurante":
+        return [
+            ft.NavigationRailDestination(
+                icon=ft.Icons.RESTAURANT_MENU_OUTLINED,
+                selected_icon=ft.Icons.RESTAURANT_MENU,
+                label="Comandas",
+            )
+        ]
+
     destinations = [
         ft.NavigationRailDestination(
             icon=ft.Icons.DASHBOARD_OUTLINED,
@@ -128,6 +138,11 @@ def get_nav_destinations(is_admin: bool) -> list[ft.NavigationRailDestination]:
             label="Órdenes (POS)",
         ),
         ft.NavigationRailDestination(
+            icon=ft.Icons.RESTAURANT_MENU_OUTLINED,
+            selected_icon=ft.Icons.RESTAURANT_MENU,
+            label="Restaurante",
+        ),
+        ft.NavigationRailDestination(
             icon=ft.Icons.HOTEL_OUTLINED,
             selected_icon=ft.Icons.HOTEL,
             label="Planes",
@@ -138,7 +153,7 @@ def get_nav_destinations(is_admin: bool) -> list[ft.NavigationRailDestination]:
             label="Servicios",
         ),
     ]
-    if is_admin:
+    if is_admin or user_role == "Admin":
         destinations.append(
             ft.NavigationRailDestination(
                 icon=ft.Icons.PEOPLE_OUTLINE,
@@ -149,8 +164,17 @@ def get_nav_destinations(is_admin: bool) -> list[ft.NavigationRailDestination]:
     return destinations
 
 
-def get_nav_bar_destinations(is_admin: bool) -> list[ft.NavigationBarDestination]:
+def get_nav_bar_destinations(user_role: str = "", is_admin: bool = False) -> list[ft.NavigationBarDestination]:
     """Destinos para el NavigationBar inferior (móvil). Mismos íconos y etiquetas."""
+    if user_role == "Restaurante":
+        return [
+            ft.NavigationBarDestination(
+                icon=ft.Icons.RESTAURANT_MENU_OUTLINED,
+                selected_icon=ft.Icons.RESTAURANT_MENU,
+                label="Comandas",
+            )
+        ]
+
     destinations = [
         ft.NavigationBarDestination(
             icon=ft.Icons.DASHBOARD_OUTLINED,
@@ -163,6 +187,11 @@ def get_nav_bar_destinations(is_admin: bool) -> list[ft.NavigationBarDestination
             label="Órdenes",
         ),
         ft.NavigationBarDestination(
+            icon=ft.Icons.RESTAURANT_MENU_OUTLINED,
+            selected_icon=ft.Icons.RESTAURANT_MENU,
+            label="Restaurante",
+        ),
+        ft.NavigationBarDestination(
             icon=ft.Icons.HOTEL_OUTLINED,
             selected_icon=ft.Icons.HOTEL,
             label="Planes",
@@ -173,7 +202,7 @@ def get_nav_bar_destinations(is_admin: bool) -> list[ft.NavigationBarDestination
             label="Servicios",
         ),
     ]
-    if is_admin:
+    if is_admin or user_role == "Admin":
         destinations.append(
             ft.NavigationBarDestination(
                 icon=ft.Icons.PEOPLE_OUTLINE,
