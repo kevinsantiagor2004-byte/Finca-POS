@@ -50,7 +50,7 @@ jobs:
 
   build-android-apk:
     name: Compilar Instalable Android (.apk)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
       - name: 📥 Descargar código fuente
@@ -61,9 +61,6 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '17'
-
-      - name: 📱 Configurar Android SDK
-        uses: android-actions/setup-android@v3
 
       - name: 🐍 Configurar Python 3.12
         uses: actions/setup-python@v5
@@ -92,7 +89,7 @@ jobs:
   publish-github-release:
     name: Publicar Release Oficial en GitHub
     needs: [build-windows-exe, build-android-apk]
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: ${{ !cancelled() && needs.build-windows-exe.result == 'success' && startsWith(github.ref, 'refs/tags/v') }}
     runs-on: ubuntu-latest
 
     steps:
