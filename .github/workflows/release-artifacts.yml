@@ -76,7 +76,7 @@ jobs:
       - name: 🔨 Compilar APK con Flet Build
         run: |
           cd frontend_flet
-          flet build apk --no-rich-output
+          flet build apk --yes --no-rich-output
 
       - name: 📤 Subir artefacto Android (.apk)
         uses: actions/upload-artifact@v4
