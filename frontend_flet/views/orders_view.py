@@ -4,6 +4,7 @@ Incluye motor de cotización en vivo (cálculo de planes + servicios + impuestos
 """
 
 import flet as ft
+from components.responsive import build_page_header, page_padding, dialog_width, is_mobile
 from services.api_client import ApiClient
 from components.toast import show_toast
 from config import ORDER_STATUS_MAP, format_cop, METODOS_PAGO
@@ -18,12 +19,12 @@ def build_orders_content(page: ft.Page) -> ft.Control:
     loading_ring = ft.ProgressRing(visible=True)
 
     # Filtros
-    search_field = ft.TextField(hint_text="Buscar por cliente...", prefix_icon=ft.Icons.SEARCH, width=220)
+    search_field = ft.TextField(hint_text="Buscar por cliente...", prefix_icon=ft.Icons.SEARCH, width=200 if is_mobile(page) else 220)
     status_filter = ft.Dropdown(
         label="Estado",
         options=[ft.dropdown.Option("Todos")] + [ft.dropdown.Option(k) for k in ORDER_STATUS_MAP.keys()],
         value="Todos",
-        width=160,
+        width=140 if is_mobile(page) else 160,
     )
 
     def load_orders():
@@ -93,98 +94,113 @@ def build_orders_content(page: ft.Page) -> ft.Control:
 
                 obs_clean = obs.strip().replace("\r\n", " ").replace("\n", " ") if obs else ""
 
-                card = ft.Container(
-                    content=ft.Row(
+                mobile = is_mobile(page)
+
+                chips = ft.Row(
+                    spacing=6,
+                    run_spacing=4,
+                    wrap=True,
+                    controls=[
+                        ft.Text(num, size=16, weight=ft.FontWeight.BOLD, color=ft.Colors.WHITE),
+                        ft.Container(
+                            content=ft.Text(cfg["label"], size=10, weight=ft.FontWeight.BOLD, color=ft.Colors.WHITE),
+                            bgcolor=cfg["color"],
+                            padding=ft.Padding.symmetric(horizontal=8, vertical=2),
+                            border_radius=8,
+                        ),
+                        ft.Container(
+                            content=ft.Text(str(ord_item.get("metodoPago", "Efectivo")), size=10, weight=ft.FontWeight.BOLD, color=ft.Colors.CYAN_100),
+                            bgcolor=ft.Colors.CYAN_900,
+                            padding=ft.Padding.symmetric(horizontal=8, vertical=2),
+                            border_radius=8,
+                        ),
+                        ft.Container(
+                            content=ft.Row(
+                                spacing=3,
+                                tight=True,
+                                controls=[
+                                    ft.Icon(ft.Icons.VERIFIED, size=12, color=ft.Colors.WHITE),
+                                    ft.Text(f"DIAN {ord_item.get('dianNumeroFactura')}", size=10, weight=ft.FontWeight.BOLD, color=ft.Colors.WHITE),
+                                ]
+                            ),
+                            bgcolor=ft.Colors.PURPLE_800,
+                            padding=ft.Padding.symmetric(horizontal=8, vertical=2),
+                            border_radius=8,
+                            visible=bool(ord_item.get("dianNumeroFactura"))
+                        ),
+                    ]
+                )
+                info = ft.Column(
+                    spacing=2,
+                    expand=mobile,
+                    controls=[
+                        chips,
+                        ft.Text(f"Cliente: {cliente} · {huespedes} huésped(es) · Fecha: {fecha}", size=12, color=ft.Colors.GREY_400),
+                        ft.Text(f"Plan: {plan_nom}", size=12, color=ft.Colors.GREEN_300, weight=ft.FontWeight.W_500),
+                    ]
+                )
+                icon_box = ft.Container(
+                    content=ft.Icon(ft.Icons.RECEIPT, color=ft.Colors.WHITE, size=24),
+                    bgcolor=ft.Colors.GREEN_900,
+                    padding=12,
+                    border_radius=10,
+                )
+                price_col = ft.Column(
+                    horizontal_alignment=ft.CrossAxisAlignment.START if mobile else ft.CrossAxisAlignment.END,
+                    spacing=2,
+                    controls=[
+                        ft.Text(format_cop(total), size=18, weight=ft.FontWeight.BOLD, color=ft.Colors.GREEN_400),
+                        ft.Text(f"Subtotal: {format_cop(subtotal)}" + (f" (Desc: {format_cop(desc)})" if desc > 0 else ""), size=11, color=ft.Colors.GREY_500)
+                    ]
+                )
+                obs_row = ft.Row(
+                    spacing=6,
+                    controls=[
+                        ft.Icon(ft.Icons.COMMENT_OUTLINED, size=14, color=ft.Colors.GREY_500),
+                        ft.Text(
+                            obs_clean,
+                            size=12,
+                            color=ft.Colors.GREY_400,
+                            italic=True,
+                            max_lines=1,
+                            overflow=ft.TextOverflow.ELLIPSIS,
+                            expand=True,
+                        )
+                    ]
+                ) if obs_clean else None
+
+                if mobile:
+                    # Móvil: bloques apilados para que nada quede fuera de la pantalla
+                    body = ft.Column(
+                        spacing=10,
+                        controls=[
+                            ft.Row(spacing=12, vertical_alignment=ft.CrossAxisAlignment.START, controls=[icon_box, info]),
+                            *([obs_row] if obs_row else []),
+                            ft.Row(
+                                alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                                vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                                wrap=True,
+                                run_spacing=4,
+                                controls=[price_col, ft.Row(spacing=4, controls=actions)],
+                            ),
+                        ]
+                    )
+                else:
+                    body = ft.Row(
                         alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
                         vertical_alignment=ft.CrossAxisAlignment.CENTER,
                         controls=[
-                            ft.Row(
-                                spacing=16,
-                                controls=[
-                                    ft.Container(
-                                        content=ft.Icon(ft.Icons.RECEIPT, color=ft.Colors.WHITE, size=24),
-                                        bgcolor=ft.Colors.GREEN_900,
-                                        padding=12,
-                                        border_radius=10,
-                                    ),
-                                    ft.Column(
-                                        spacing=2,
-                                        controls=[
-                                            ft.Row(
-                                                spacing=8,
-                                                controls=[
-                                                    ft.Text(num, size=16, weight=ft.FontWeight.BOLD, color=ft.Colors.WHITE),
-                                                    ft.Container(
-                                                        content=ft.Text(cfg["label"], size=10, weight=ft.FontWeight.BOLD, color=ft.Colors.WHITE),
-                                                        bgcolor=cfg["color"],
-                                                        padding=ft.Padding.symmetric(horizontal=8, vertical=2),
-                                                        border_radius=8,
-                                                    ),
-                                                    ft.Container(
-                                                        content=ft.Text(str(ord_item.get("metodoPago", "Efectivo")), size=10, weight=ft.FontWeight.BOLD, color=ft.Colors.CYAN_100),
-                                                        bgcolor=ft.Colors.CYAN_900,
-                                                        padding=ft.Padding.symmetric(horizontal=8, vertical=2),
-                                                        border_radius=8,
-                                                    ),
-                                                    ft.Container(
-                                                        content=ft.Row(
-                                                            spacing=3,
-                                                            controls=[
-                                                                ft.Icon(ft.Icons.VERIFIED, size=12, color=ft.Colors.WHITE),
-                                                                ft.Text(f"DIAN {ord_item.get('dianNumeroFactura')}", size=10, weight=ft.FontWeight.BOLD, color=ft.Colors.WHITE),
-                                                            ]
-                                                        ),
-                                                        bgcolor=ft.Colors.PURPLE_800,
-                                                        padding=ft.Padding.symmetric(horizontal=8, vertical=2),
-                                                        border_radius=8,
-                                                        visible=bool(ord_item.get("dianNumeroFactura"))
-                                                    )
-                                                ]
-                                            ),
-                                            ft.Text(f"Cliente: {cliente} · {huespedes} huésped(es) · Fecha: {fecha}", size=12, color=ft.Colors.GREY_400),
-                                            ft.Text(f"Plan: {plan_nom}", size=12, color=ft.Colors.GREEN_300, weight=ft.FontWeight.W_500),
-                                        ]
-                                    )
-                                ]
-                            ),
-                            ft.Container(
-                                content=ft.Row(
-                                    spacing=6,
-                                    controls=[
-                                        ft.Icon(ft.Icons.COMMENT_OUTLINED, size=14, color=ft.Colors.GREY_500),
-                                        ft.Text(
-                                            obs_clean,
-                                            size=12,
-                                            color=ft.Colors.GREY_400,
-                                            italic=True,
-                                            max_lines=1,
-                                            overflow=ft.TextOverflow.ELLIPSIS,
-                                            expand=True,
-                                        )
-                                    ]
-                                ) if obs_clean else None,
-                                expand=True,
-                                padding=ft.Padding.symmetric(horizontal=16),
-                            ),
-                            ft.Row(
-                                spacing=16,
-                                controls=[
-                                    ft.Column(
-                                        horizontal_alignment=ft.CrossAxisAlignment.END,
-                                        spacing=2,
-                                        controls=[
-                                            ft.Text(format_cop(total), size=18, weight=ft.FontWeight.BOLD, color=ft.Colors.GREEN_400),
-                                            ft.Text(f"Subtotal: {format_cop(subtotal)}" + (f" (Desc: {format_cop(desc)})" if desc > 0 else ""), size=11, color=ft.Colors.GREY_500)
-                                        ]
-                                    ),
-                                    ft.Row(controls=actions)
-                                ]
-                            )
+                            ft.Row(spacing=16, controls=[icon_box, info]),
+                            ft.Container(content=obs_row, expand=True, padding=ft.Padding.symmetric(horizontal=16)),
+                            ft.Row(spacing=16, controls=[price_col, ft.Row(controls=actions)]),
                         ]
-                    ),
+                    )
+
+                card = ft.Container(
+                    content=body,
                     bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH,
                     border_radius=10,
-                    padding=14,
+                    padding=12 if mobile else 14,
                     border=ft.Border.all(1, ft.Colors.GREY_800),
                 )
                 orders_list.controls.append(card)
@@ -302,7 +318,7 @@ def build_orders_content(page: ft.Page) -> ft.Control:
             content=ft.Column(
                 tight=True,
                 spacing=10,
-                width=380,
+                width=dialog_width(page, 380),
                 scroll=ft.ScrollMode.AUTO,
                 controls=detail_controls
             ),
@@ -394,7 +410,7 @@ def build_orders_content(page: ft.Page) -> ft.Control:
         plan_dropdown = ft.Dropdown(label="Selecciona un Plan *", options=plan_options, value=plan_options[0].key, expand=True)
 
         services_checkbox_container = ft.Column(spacing=6)
-        total_text = ft.Text(format_cop(0), size=22, weight=ft.FontWeight.BOLD, color=ft.Colors.GREEN_400)
+        total_text = ft.Text(format_cop(0), size=18 if is_mobile(page) else 22, weight=ft.FontWeight.BOLD, color=ft.Colors.GREEN_400)
         subtotal_text = ft.Text(format_cop(0), size=13, color=ft.Colors.GREY_300)
         iva_text = ft.Text(format_cop(0), size=13, color=ft.Colors.GREY_300)
 
@@ -484,11 +500,15 @@ def build_orders_content(page: ft.Page) -> ft.Control:
                     )
                 else:
                     cb = ft.Checkbox(
-                        label=f"{snom} (+{format_cop(sprec)})",
                         value=(sid in selected_optional_ids),
                         on_change=lambda e, sid=sid: toggle_optional_service(sid, e.control.value)
                     )
-                    services_checkbox_container.controls.append(cb)
+                    services_checkbox_container.controls.append(
+                        ft.Row(
+                            spacing=4,
+                            controls=[cb, ft.Text(f"{snom} (+{format_cop(sprec)})", size=13, expand=True)],
+                        )
+                    )
 
         plan_dropdown.on_select = on_plan_change
         descuento_field.on_change = lambda _: recalculate_price()
@@ -553,7 +573,7 @@ def build_orders_content(page: ft.Page) -> ft.Control:
         dlg = ft.AlertDialog(
             title=ft.Text("Nueva Orden de Venta (POS)"),
             content=ft.Container(
-                width=460,
+                width=dialog_width(page, 460),
                 content=ft.Column(
                     tight=True,
                     spacing=12,
@@ -571,11 +591,13 @@ def build_orders_content(page: ft.Page) -> ft.Control:
                             content=ft.Column(
                                 spacing=4,
                                 controls=[
-                                    ft.Row(alignment=ft.MainAxisAlignment.SPACE_BETWEEN, controls=[subtotal_text, iva_text]),
+                                    *([subtotal_text, iva_text] if is_mobile(page) else [
+                                        ft.Row(alignment=ft.MainAxisAlignment.SPACE_BETWEEN, controls=[subtotal_text, iva_text])
+                                    ]),
                                     ft.Row(
                                         alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
                                         controls=[
-                                            ft.Text("Total a Cobrar:", size=16, weight=ft.FontWeight.BOLD),
+                                            ft.Text("Total a Cobrar:", size=14 if is_mobile(page) else 16, weight=ft.FontWeight.BOLD),
                                             total_text
                                         ]
                                     ),
@@ -601,31 +623,21 @@ def build_orders_content(page: ft.Page) -> ft.Control:
 
     load_orders()
 
-    header = ft.Row(
-        alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
-        controls=[
-            ft.Column(
-                spacing=2,
-                controls=[
-                    ft.Text("Punto de Venta (POS)", size=22, weight=ft.FontWeight.BOLD, color=ft.Colors.WHITE),
-                    ft.Text("Control de facturación, estadías y servicios contratados.", size=13, color=ft.Colors.GREY_400),
-                ]
+    header = build_page_header(
+        page,
+        "Punto de Venta (POS)",
+        "Control de facturación, estadías y servicios contratados.",
+        [
+            search_field,
+            status_filter,
+            ft.IconButton(icon=ft.Icons.REFRESH, tooltip="Recargar", on_click=lambda _: load_orders()),
+            ft.FilledButton(
+                "+ Nueva Orden",
+                icon=ft.Icons.ADD_SHOPPING_CART,
+                style=ft.ButtonStyle(bgcolor=ft.Colors.GREEN_600, color=ft.Colors.WHITE),
+                on_click=lambda _: open_create_order_dialog()
             ),
-            ft.Row(
-                spacing=8,
-                controls=[
-                    search_field,
-                    status_filter,
-                    ft.IconButton(icon=ft.Icons.REFRESH, tooltip="Recargar", on_click=lambda _: load_orders()),
-                    ft.FilledButton(
-                        "+ Nueva Orden",
-                        icon=ft.Icons.ADD_SHOPPING_CART,
-                        style=ft.ButtonStyle(bgcolor=ft.Colors.GREEN_600, color=ft.Colors.WHITE),
-                        on_click=lambda _: open_create_order_dialog()
-                    )
-                ]
-            )
-        ]
+        ],
     )
 
     return ft.Container(
@@ -638,6 +650,6 @@ def build_orders_content(page: ft.Page) -> ft.Control:
                 orders_list,
             ]
         ),
-        padding=24,
+        padding=page_padding(page),
         expand=True,
     )

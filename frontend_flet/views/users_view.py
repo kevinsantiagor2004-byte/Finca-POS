@@ -3,6 +3,7 @@ Vista de Gestión de Usuarios y Roles en Python Flet (Acceso exclusivo Administr
 """
 
 import flet as ft
+from components.responsive import build_page_header, page_padding, dialog_width, is_mobile
 from services.api_client import ApiClient
 from components.toast import show_toast
 from config import ROLES
@@ -66,57 +67,68 @@ def build_users_content(page: ft.Page) -> ft.Control:
                     )
                 )
 
-            card = ft.Container(
-                content=ft.Row(
+            mobile = is_mobile(page)
+            avatar = ft.Container(
+                content=ft.Text(nom[:2].upper(), weight=ft.FontWeight.BOLD, color=ft.Colors.WHITE, size=14),
+                bgcolor=ft.Colors.GREEN_800,
+                width=40,
+                height=40,
+                border_radius=20,
+                alignment=ft.Alignment.CENTER,
+            )
+            name_row = ft.Row(
+                spacing=8,
+                run_spacing=4,
+                wrap=True,
+                controls=[
+                    ft.Text(nom, size=15, weight=ft.FontWeight.BOLD, color=ft.Colors.WHITE),
+                    ft.Text("(Tú)", size=12, color=ft.Colors.GREEN_400, weight=ft.FontWeight.BOLD) if is_me else ft.Container(),
+                    ft.Container(
+                        content=ft.Text(rol, size=10, weight=ft.FontWeight.BOLD, color=ft.Colors.WHITE),
+                        bgcolor=color_rol,
+                        padding=ft.Padding.symmetric(horizontal=6, vertical=2),
+                        border_radius=6,
+                    )
+                ]
+            )
+            info = ft.Column(
+                spacing=2,
+                expand=mobile,
+                controls=[
+                    name_row,
+                    ft.Text(f"Email: {email} · Tel: {tel}", size=12, color=ft.Colors.GREY_400),
+                    ft.Text(f"{tot_orders} órdenes registradas", size=11, color=ft.Colors.GREY_500),
+                ]
+            )
+            status_chip = ft.Container(
+                content=ft.Text("Activo" if is_active else "Inactivo", size=11, weight=ft.FontWeight.BOLD, color=ft.Colors.WHITE),
+                bgcolor=ft.Colors.GREEN_700 if is_active else ft.Colors.RED_700,
+                padding=ft.Padding.symmetric(horizontal=8, vertical=4),
+                border_radius=6,
+            )
+            if mobile:
+                body = ft.Column(
+                    spacing=6,
+                    controls=[
+                        ft.Row(spacing=12, vertical_alignment=ft.CrossAxisAlignment.START, controls=[avatar, info]),
+                        ft.Row(
+                            alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                            vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                            controls=[status_chip, ft.Row(controls=actions)],
+                        ),
+                    ]
+                )
+            else:
+                body = ft.Row(
                     alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
                     controls=[
-                        ft.Row(
-                            spacing=14,
-                            controls=[
-                                ft.Container(
-                                    content=ft.Text(nom[:2].upper(), weight=ft.FontWeight.BOLD, color=ft.Colors.WHITE, size=14),
-                                    bgcolor=ft.Colors.GREEN_800,
-                                    width=40,
-                                    height=40,
-                                    border_radius=20,
-                                    alignment=ft.Alignment.CENTER,
-                                ),
-                                ft.Column(
-                                    spacing=2,
-                                    controls=[
-                                        ft.Row(
-                                            spacing=8,
-                                            controls=[
-                                                ft.Text(nom, size=15, weight=ft.FontWeight.BOLD, color=ft.Colors.WHITE),
-                                                ft.Text("(Tú)", size=12, color=ft.Colors.GREEN_400, weight=ft.FontWeight.BOLD) if is_me else ft.Container(),
-                                                ft.Container(
-                                                    content=ft.Text(rol, size=10, weight=ft.FontWeight.BOLD, color=ft.Colors.WHITE),
-                                                    bgcolor=color_rol,
-                                                    padding=ft.Padding.symmetric(horizontal=6, vertical=2),
-                                                    border_radius=6,
-                                                )
-                                            ]
-                                        ),
-                                        ft.Text(f"Email: {email} · Tel: {tel}", size=12, color=ft.Colors.GREY_400),
-                                        ft.Text(f"{tot_orders} órdenes registradas", size=11, color=ft.Colors.GREY_500),
-                                    ]
-                                )
-                            ]
-                        ),
-                        ft.Row(
-                            spacing=12,
-                            controls=[
-                                ft.Container(
-                                    content=ft.Text("Activo" if is_active else "Inactivo", size=11, weight=ft.FontWeight.BOLD, color=ft.Colors.WHITE),
-                                    bgcolor=ft.Colors.GREEN_700 if is_active else ft.Colors.RED_700,
-                                    padding=ft.Padding.symmetric(horizontal=8, vertical=4),
-                                    border_radius=6,
-                                ),
-                                ft.Row(controls=actions)
-                            ]
-                        )
+                        ft.Row(spacing=14, controls=[avatar, info]),
+                        ft.Row(spacing=12, controls=[status_chip, ft.Row(controls=actions)]),
                     ]
-                ),
+                )
+
+            card = ft.Container(
+                content=body,
                 bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH,
                 padding=12,
                 border_radius=10,
@@ -241,30 +253,20 @@ def build_users_content(page: ft.Page) -> ft.Control:
     role_filter.on_select = lambda _: load_users()
     load_users()
 
-    header = ft.Row(
-        alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
-        controls=[
-            ft.Column(
-                spacing=2,
-                controls=[
-                    ft.Text("Gestión de Usuarios", size=22, weight=ft.FontWeight.BOLD, color=ft.Colors.WHITE),
-                    ft.Text("Administración de colaboradores, roles y permisos.", size=13, color=ft.Colors.GREY_400),
-                ]
+    header = build_page_header(
+        page,
+        "Gestión de Usuarios",
+        "Administración de colaboradores, roles y permisos.",
+        [
+            role_filter,
+            ft.IconButton(icon=ft.Icons.REFRESH, tooltip="Recargar", on_click=lambda _: load_users()),
+            ft.FilledButton(
+                "+ Nuevo Usuario",
+                icon=ft.Icons.PERSON_ADD,
+                style=ft.ButtonStyle(bgcolor=ft.Colors.GREEN_600, color=ft.Colors.WHITE),
+                on_click=lambda _: open_create_user_dialog()
             ),
-            ft.Row(
-                spacing=8,
-                controls=[
-                    role_filter,
-                    ft.IconButton(icon=ft.Icons.REFRESH, tooltip="Recargar", on_click=lambda _: load_users()),
-                    ft.FilledButton(
-                        "+ Nuevo Usuario",
-                        icon=ft.Icons.PERSON_ADD,
-                        style=ft.ButtonStyle(bgcolor=ft.Colors.GREEN_600, color=ft.Colors.WHITE),
-                        on_click=lambda _: open_create_user_dialog()
-                    )
-                ]
-            )
-        ]
+        ],
     )
 
     return ft.Container(
@@ -277,6 +279,6 @@ def build_users_content(page: ft.Page) -> ft.Control:
                 users_list,
             ]
         ),
-        padding=24,
+        padding=page_padding(page),
         expand=True,
     )

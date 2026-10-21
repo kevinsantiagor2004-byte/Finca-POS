@@ -315,7 +315,7 @@ def build_restaurant_content(page: ft.Page) -> ft.Control:
                                     spacing=8,
                                     controls=[
                                         ft.Icon(ft.Icons.RESTAURANT_MENU, color=ft.Colors.ORANGE_400, size=24),
-                                        ft.Text("Comandas de Cocina / Restaurante", size=18, weight=ft.FontWeight.BOLD, color=ft.Colors.WHITE),
+                                        ft.Text("Comandas de Cocina / Restaurante", size=18, weight=ft.FontWeight.BOLD, color=ft.Colors.WHITE, expand=True),
                                     ]
                                 ),
                                 ft.Text("Almuerzos y alimentos facturados por el cajero para preparación inmediata.", size=12, color=ft.Colors.GREY_400),

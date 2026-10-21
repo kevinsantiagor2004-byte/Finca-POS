@@ -3,6 +3,7 @@ Vista de Gestión de Planes en Python Flet.
 """
 
 import flet as ft
+from components.responsive import build_page_header, page_padding, dialog_width, is_mobile
 from services.api_client import ApiClient
 from components.toast import show_toast
 from config import format_cop
@@ -392,30 +393,20 @@ def build_planes_content(page: ft.Page) -> ft.Control:
     # Cargar al inicio
     load_planes()
 
-    header = ft.Row(
-        alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
-        controls=[
-            ft.Column(
-                spacing=2,
-                controls=[
-                    ft.Text("Catálogo de Planes", size=22, weight=ft.FontWeight.BOLD, color=ft.Colors.WHITE),
-                    ft.Text("Paquetes de hospedaje y servicios combinados.", size=13, color=ft.Colors.GREY_400),
-                ]
+    header = build_page_header(
+        page,
+        "Catálogo de Planes",
+        "Paquetes de hospedaje y servicios combinados.",
+        [
+            ft.IconButton(icon=ft.Icons.REFRESH, tooltip="Recargar", on_click=lambda _: load_planes()),
+            ft.FilledButton(
+                "+ Nuevo Plan",
+                icon=ft.Icons.ADD,
+                style=ft.ButtonStyle(bgcolor=ft.Colors.GREEN_600, color=ft.Colors.WHITE),
+                on_click=lambda _: open_create_plan_dialog(),
+                visible=is_admin
             ),
-            ft.Row(
-                spacing=8,
-                controls=[
-                    ft.IconButton(icon=ft.Icons.REFRESH, tooltip="Recargar", on_click=lambda _: load_planes()),
-                    ft.FilledButton(
-                        "+ Nuevo Plan",
-                        icon=ft.Icons.ADD,
-                        style=ft.ButtonStyle(bgcolor=ft.Colors.GREEN_600, color=ft.Colors.WHITE),
-                        on_click=lambda _: open_create_plan_dialog(),
-                        visible=is_admin
-                    )
-                ]
-            )
-        ]
+        ],
     )
 
     return ft.Container(
@@ -429,6 +420,6 @@ def build_planes_content(page: ft.Page) -> ft.Control:
                 plans_container,
             ]
         ),
-        padding=24,
+        padding=page_padding(page),
         expand=True,
     )

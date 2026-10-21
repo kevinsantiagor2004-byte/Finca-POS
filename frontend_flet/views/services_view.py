@@ -3,6 +3,7 @@ Vista de Catálogo de Servicios Adicionales en Python Flet.
 """
 
 import flet as ft
+from components.responsive import build_page_header, page_padding, dialog_width, is_mobile
 from services.api_client import ApiClient
 from components.toast import show_toast
 from config import CATEGORIAS_SERVICIOS, format_cop
@@ -277,38 +278,28 @@ def build_services_content(page: ft.Page) -> ft.Control:
         label="Filtrar por Categoría",
         options=[ft.dropdown.Option("Todas")] + [ft.dropdown.Option(c) for c in CATEGORIAS_SERVICIOS],
         value="Todas",
-        width=220,
+        width=200 if is_mobile(page) else 220,
         on_select=on_category_filter_change
     )
 
     # Cargar al inicio
     load_services()
 
-    header = ft.Row(
-        alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
-        controls=[
-            ft.Column(
-                spacing=2,
-                controls=[
-                    ft.Text("Servicios Adicionales", size=22, weight=ft.FontWeight.BOLD, color=ft.Colors.WHITE),
-                    ft.Text("Actividades, alimentos, spa y consumos extra.", size=13, color=ft.Colors.GREY_400),
-                ]
+    header = build_page_header(
+        page,
+        "Servicios Adicionales",
+        "Actividades, alimentos, spa y consumos extra.",
+        [
+            filter_dropdown,
+            ft.IconButton(icon=ft.Icons.REFRESH, tooltip="Recargar", on_click=lambda _: load_services()),
+            ft.FilledButton(
+                "+ Nuevo Servicio",
+                icon=ft.Icons.ADD,
+                style=ft.ButtonStyle(bgcolor=ft.Colors.GREEN_600, color=ft.Colors.WHITE),
+                on_click=lambda _: open_create_service_dialog(),
+                visible=is_admin
             ),
-            ft.Row(
-                spacing=8,
-                controls=[
-                    filter_dropdown,
-                    ft.IconButton(icon=ft.Icons.REFRESH, tooltip="Recargar", on_click=lambda _: load_services()),
-                    ft.FilledButton(
-                        "+ Nuevo Servicio",
-                        icon=ft.Icons.ADD,
-                        style=ft.ButtonStyle(bgcolor=ft.Colors.GREEN_600, color=ft.Colors.WHITE),
-                        on_click=lambda _: open_create_service_dialog(),
-                        visible=is_admin
-                    )
-                ]
-            )
-        ]
+        ],
     )
 
     return ft.Container(
@@ -322,6 +313,6 @@ def build_services_content(page: ft.Page) -> ft.Control:
                 services_container,
             ]
         ),
-        padding=24,
+        padding=page_padding(page),
         expand=True,
     )

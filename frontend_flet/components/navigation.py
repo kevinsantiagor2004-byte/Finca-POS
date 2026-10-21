@@ -189,7 +189,7 @@ def get_nav_bar_destinations(user_role: str = "", is_admin: bool = False) -> lis
         ft.NavigationBarDestination(
             icon=ft.Icons.RESTAURANT_MENU_OUTLINED,
             selected_icon=ft.Icons.RESTAURANT_MENU,
-            label="Restaurante",
+            label="Cocina",
         ),
         ft.NavigationBarDestination(
             icon=ft.Icons.HOTEL_OUTLINED,
