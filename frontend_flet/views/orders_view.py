@@ -379,18 +379,19 @@ def build_orders_content(page: ft.Page) -> ft.Control:
             return
 
         cliente_field = ft.TextField(label="Nombre del Cliente *", autofocus=True)
-        huespedes_field = ft.TextField(label="N° de Huéspedes", value="1", keyboard_type=ft.KeyboardType.NUMBER)
-        descuento_field = ft.TextField(label="Descuento (COP)", value="0", keyboard_type=ft.KeyboardType.NUMBER)
-        propina_field = ft.TextField(label="Propina Voluntaria (COP)", value="0", keyboard_type=ft.KeyboardType.NUMBER)
+        huespedes_field = ft.TextField(label="N° de Huéspedes", value="1", expand=True, keyboard_type=ft.KeyboardType.NUMBER)
+        descuento_field = ft.TextField(label="Descuento (COP)", value="0", expand=True, keyboard_type=ft.KeyboardType.NUMBER)
+        propina_field = ft.TextField(label="Propina (COP)", value="0", expand=True, keyboard_type=ft.KeyboardType.NUMBER)
         metodo_pago_dropdown = ft.Dropdown(
             label="Método de Pago",
+            expand=True,
             options=[ft.dropdown.Option(key=str(m["id"]), text=m["nombre"]) for m in METODOS_PAGO],
             value="0"
         )
         observaciones_field = ft.TextField(label="Notas / Observaciones", multiline=True)
 
         plan_options = [ft.dropdown.Option(key=p["id"], text=f"{p['nombre']} — {format_cop(p['precioBase'])}") for p in planes]
-        plan_dropdown = ft.Dropdown(label="Selecciona un Plan *", options=plan_options, value=plan_options[0].key)
+        plan_dropdown = ft.Dropdown(label="Selecciona un Plan *", options=plan_options, value=plan_options[0].key, expand=True)
 
         services_checkbox_container = ft.Column(spacing=6)
         total_text = ft.Text(format_cop(0), size=22, weight=ft.FontWeight.BOLD, color=ft.Colors.GREEN_400)
@@ -561,7 +562,7 @@ def build_orders_content(page: ft.Page) -> ft.Control:
                         cliente_field,
                         ft.Row(spacing=8, controls=[huespedes_field, descuento_field]),
                         ft.Row(spacing=8, controls=[metodo_pago_dropdown, propina_field]),
-                        plan_dropdown,
+                        ft.Row(controls=[plan_dropdown]),
                         ft.Text("Servicios del Plan:", size=12, weight=ft.FontWeight.BOLD, color=ft.Colors.GREY_300),
                         services_checkbox_container,
                         observaciones_field,

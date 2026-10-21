@@ -26,7 +26,7 @@ def build_restaurant_content(page: ft.Page) -> ft.Control:
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
             spacing=8,
             controls=[
-                ft.Icon(ft.Icons.OUTLINE_FOOD_BANK, size=54, color=ft.Colors.GREY_600),
+                ft.Icon(ft.Icons.FOOD_BANK_OUTLINED, size=54, color=ft.Colors.GREY_600),
                 ft.Text("No hay órdenes de almuerzos pendientes por despachar", size=15, color=ft.Colors.GREY_400, weight=ft.FontWeight.W_500),
                 ft.Text("Las órdenes aparecerán automáticamente cuando el cajero las facture en el POS.", size=12, color=ft.Colors.GREY_600),
             ]
@@ -68,7 +68,7 @@ def build_restaurant_content(page: ft.Page) -> ft.Control:
         page.update()
 
         # Solo órdenes FACTURADAS (cobradas por el cajero)
-        ok, res = client.get_orders(estado="Facturada", tamano_pagina=50)
+        ok, res = client.get_orders(estado="Facturada", tamano=50)
 
         loading_ring.visible = False
 
@@ -197,7 +197,7 @@ def build_restaurant_content(page: ft.Page) -> ft.Control:
                 ]
             ),
             padding=ft.Padding.symmetric(horizontal=6, vertical=2),
-            bgcolor=ft.Colors.GREEN_950,
+            bgcolor=ft.Colors.GREEN_900,
             border_radius=4,
             border=ft.Border.all(1, ft.Colors.GREEN_700),
         )
@@ -245,7 +245,7 @@ def build_restaurant_content(page: ft.Page) -> ft.Control:
                                 ft.Text(f"{huespedes} comensales", size=11, color=ft.Colors.AMBER_300, weight=ft.FontWeight.BOLD),
                             ]
                         ),
-                        bgcolor=ft.Colors.AMBER_950,
+                        bgcolor=ft.Colors.AMBER_900,
                         padding=ft.Padding.symmetric(horizontal=6, vertical=2),
                         border_radius=4,
                     )
@@ -300,7 +300,7 @@ def build_restaurant_content(page: ft.Page) -> ft.Control:
     # Barra superior de controles KDS
     top_bar = ft.Card(
         elevation=2,
-        color=ft.Colors.SURFACE_CONTAINER_HIGH,
+        bgcolor=ft.Colors.SURFACE_CONTAINER_HIGH,
         content=ft.Container(
             padding=14,
             content=ft.ResponsiveRow(

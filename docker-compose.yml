@@ -81,7 +81,7 @@ services:
       PGADMIN_DEFAULT_EMAIL: ${ADMIN_EMAIL:-admin@finca.com}
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-Admin@2024!}
     ports:
-      - "5050:80"
+      - "127.0.0.1:5050:80"  # Solo desde el servidor, no desde la LAN
     depends_on:
       - postgres
     restart: unless-stopped
@@ -101,7 +101,7 @@ services:
       ME_CONFIG_MONGODB_URL: mongodb://mongodb:27017/
       ME_CONFIG_BASICAUTH: "false"
     ports:
-      - "8081:8081"
+      - "127.0.0.1:8081:8081"  # Solo desde el servidor, no desde la LAN
     depends_on:
       - mongodb
     restart: unless-stopped

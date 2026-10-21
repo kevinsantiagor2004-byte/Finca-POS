@@ -67,3 +67,4 @@ frontend_flet/build/
 flet_log.txt
 *smtp*.json
 *.html
+frontend_flet/finca_pos_data.json
