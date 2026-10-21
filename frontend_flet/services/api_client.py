@@ -6,7 +6,7 @@ Maneja autenticación con Bearer Token JWT y serialización de peticiones.
 from typing import Any, Dict, List, Optional, Tuple
 import httpx
 import flet as ft
-from config import API_BASE_URL
+from config import API_BASE_URL, get_ssl_verify
 
 
 class ApiClient:
@@ -22,7 +22,7 @@ class ApiClient:
         self.base_url = base_url or API_BASE_URL
         self.token: Optional[str] = None
         self.user_info: Optional[Dict[str, Any]] = None
-        self._client = httpx.Client(base_url=self.base_url, timeout=12.0)
+        self._client = httpx.Client(base_url=self.base_url, timeout=12.0, verify=get_ssl_verify())
 
     def configure_for_page(self, page: Optional[ft.Page] = None, custom_url: Optional[str] = None):
         """Actualiza la URL base de acuerdo a una URL personalizada o a la plataforma detectada."""
@@ -30,7 +30,7 @@ class ApiClient:
         new_url = get_api_base_url(page, saved_url=custom_url)
         if new_url != self.base_url or self._client is None:
             self.base_url = new_url
-            self._client = httpx.Client(base_url=self.base_url, timeout=12.0)
+            self._client = httpx.Client(base_url=self.base_url, timeout=12.0, verify=get_ssl_verify())
 
 
     @property

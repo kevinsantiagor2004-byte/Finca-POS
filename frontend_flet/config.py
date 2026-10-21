@@ -12,6 +12,18 @@ import flet as ft
 DEFAULT_PHYSICAL_DEVICE_IP = os.getenv("FINCA_API_HOST", "192.168.1.100")
 API_PORT = os.getenv("FINCA_API_PORT", "8080")
 
+# HTTPS: ruta al certificado raiz de Caddy (caddy-root.crt) para confiar en el servidor.
+# Si no se define, se usa la verificacion normal del sistema.
+FINCA_CA_CERT = os.getenv("FINCA_CA_CERT", "").strip()
+
+
+def get_ssl_verify():
+    """Devuelve el parametro 'verify' de httpx: contexto SSL con la CA de Finca o True."""
+    if FINCA_CA_CERT and os.path.exists(FINCA_CA_CERT):
+        import ssl
+        return ssl.create_default_context(cafile=FINCA_CA_CERT)
+    return True
+
 
 def normalize_api_url(url: str) -> str:
     """Normaliza la dirección asegurando protocolo http/https y terminación /api."""

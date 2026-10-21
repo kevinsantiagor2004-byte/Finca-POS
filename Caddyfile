@@ -1,0 +1,14 @@
+# Proxy inverso HTTPS para la API de Finca POS.
+# Escucha en 8443 con un certificado de la CA interna de Caddy y reenvia a api:8080.
+# El puerto 8080 (HTTP) se mantiene para compatibilidad con clientes existentes.
+# FINCA_HOST = IP de la LAN del servidor (se define en .env).
+{
+	local_certs
+	auto_https disable_redirects
+	default_sni {$FINCA_HOST:127.0.0.1}
+}
+
+https://localhost:8443, https://{$FINCA_HOST:127.0.0.1}:8443 {
+	tls internal
+	reverse_proxy api:8080
+}

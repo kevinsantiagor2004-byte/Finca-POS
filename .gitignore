@@ -68,3 +68,4 @@ flet_log.txt
 *smtp*.json
 *.html
 frontend_flet/finca_pos_data.json
+caddy-root.crt
