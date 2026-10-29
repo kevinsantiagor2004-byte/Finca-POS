@@ -143,6 +143,21 @@ public class SalesOrderConfiguration : IEntityTypeConfiguration<SalesOrder>
             .HasMaxLength(50);
 
         // -----------------------------------------------
+        // Cobro y comprobante
+        // -----------------------------------------------
+        builder.Property(so => so.FechaPago)
+            .HasColumnName("fecha_pago")
+            .HasColumnType("timestamptz");
+
+        builder.Property(so => so.TipoComprobante)
+            .HasColumnName("tipo_comprobante")
+            .HasMaxLength(20);
+
+        builder.Property(so => so.CorreoCliente)
+            .HasColumnName("correo_cliente")
+            .HasMaxLength(200);
+
+        // -----------------------------------------------
         // Estado
         // -----------------------------------------------
         builder.Property(so => so.Estado)

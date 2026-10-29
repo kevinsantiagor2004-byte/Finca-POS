@@ -102,6 +102,19 @@ public class SalesOrder : BaseEntity
     public string? DianNumeroFactura { get; set; }
 
     // -----------------------------------------------
+    // Cobro y comprobante
+    // -----------------------------------------------
+
+    /// <summary>Fecha y hora UTC en que se registró el pago (null = la orden aún no se cobra).</summary>
+    public DateTime? FechaPago { get; set; }
+
+    /// <summary>Comprobante entregado al cobrar: "Electronica" (factura DIAN) o "Simple" (recibo mostrado).</summary>
+    public string? TipoComprobante { get; set; }
+
+    /// <summary>Correo al que se enviará el comprobante (opcional).</summary>
+    public string? CorreoCliente { get; set; }
+
+    // -----------------------------------------------
     // Estado
     // -----------------------------------------------
 

@@ -67,6 +67,15 @@ public class SalesOrderResponseDto
     // Facturación Electrónica DIAN
     // -----------------------------------------------
     public string? Cufe { get; set; }
+
+    /// <summary>Fecha UTC del cobro (null si la orden aún no se cobra).</summary>
+    public DateTime? FechaPago { get; set; }
+
+    /// <summary>"Electronica" o "Simple" (null si aún no se cobra).</summary>
+    public string? TipoComprobante { get; set; }
+
+    /// <summary>Correo al que se envía el comprobante, si se indicó.</summary>
+    public string? CorreoCliente { get; set; }
     public string? QrCodeUrl { get; set; }
     public string? DianEstado { get; set; }
     public DateTime? DianFechaEmision { get; set; }

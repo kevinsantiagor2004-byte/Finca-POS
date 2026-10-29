@@ -210,6 +210,85 @@ def build_orders_content(page: ft.Page) -> ft.Control:
 
     # ── DIÁLOGO DE DETALLE DE ORDEN ──────────────────────────────────
 
+    METODO_ID_POR_NOMBRE = {
+        "Efectivo": 0, "Nequi": 1, "Daviplata": 2,
+        "TarjetaCredito": 3, "TarjetaDebito": 4, "TransferenciaBancaria": 5,
+    }
+
+    def open_cobrar_dialog(ord_item: dict):
+        """Diálogo de cobro: método de pago, tipo de comprobante y correo opcional."""
+        metodo_actual = METODO_ID_POR_NOMBRE.get(str(ord_item.get("metodoPago", "Efectivo")), 0)
+
+        metodo_dd = ft.Dropdown(
+            label="Método de pago",
+            value=str(metodo_actual),
+            options=[ft.dropdown.Option(key=str(m["id"]), text=m["nombre"]) for m in METODOS_PAGO],
+        )
+        comprobante_dd = ft.Dropdown(
+            label="Comprobante",
+            value="Electronica",
+            options=[
+                ft.dropdown.Option(key="Electronica", text="Factura electrónica (DIAN)"),
+                ft.dropdown.Option(key="Simple", text="Recibo simple (solo mostrar)"),
+            ],
+        )
+        correo_field = ft.TextField(
+            label="Correo del cliente (opcional)",
+            hint_text="cliente@correo.com",
+            prefix_icon=ft.Icons.EMAIL_OUTLINED,
+            keyboard_type=ft.KeyboardType.EMAIL,
+        )
+
+        def do_cobrar(e):
+            correo = (correo_field.value or "").strip()
+            if correo and ("@" not in correo or "." not in correo.split("@")[-1]):
+                correo_field.error_text = "El correo no parece válido."
+                page.update()
+                return
+            payload = {
+                "metodoPago": int(metodo_dd.value or "0"),
+                "tipoComprobante": comprobante_dd.value or "Simple",
+                "correoCliente": correo or None,
+            }
+            page.pop_dialog()
+            show_toast(page, "Registrando el cobro...")
+            ok, res = client.cobrar_orden(ord_item.get("id"), payload)
+            if ok:
+                if isinstance(res, dict) and res.get("dianNumeroFactura"):
+                    show_toast(page, f"✅ Cobrada. Factura {res.get('dianNumeroFactura')} emitida")
+                else:
+                    show_toast(page, "✅ Cobro registrado con recibo simple")
+                load_orders()
+            else:
+                show_toast(page, f"Error al cobrar: {res}", is_error=True)
+
+        dlg = ft.AlertDialog(
+            title=ft.Text(f"Cobrar {ord_item.get('numeroOrden')}"),
+            content=ft.Column(
+                tight=True,
+                spacing=12,
+                width=dialog_width(page, 380),
+                controls=[
+                    ft.Row(
+                        alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                        controls=[
+                            ft.Text("Total a cobrar:", weight=ft.FontWeight.BOLD),
+                            ft.Text(format_cop(ord_item.get("total", 0)), weight=ft.FontWeight.BOLD, size=18, color=ft.Colors.GREEN_400),
+                        ],
+                    ),
+                    metodo_dd,
+                    comprobante_dd,
+                    correo_field,
+                ],
+            ),
+            actions=[
+                ft.TextButton("Cancelar", on_click=lambda _: page.pop_dialog()),
+                ft.FilledButton("Confirmar cobro", icon=ft.Icons.PAYMENTS_OUTLINED, on_click=do_cobrar,
+                                style=ft.ButtonStyle(bgcolor=ft.Colors.GREEN_700)),
+            ],
+        )
+        page.show_dialog(dlg)
+
     def open_order_detail_dialog(ord_item: dict):
         servicios_incluidos = ord_item.get("servicios", [])
         servicios_rows = []
@@ -252,6 +331,8 @@ def build_orders_content(page: ft.Page) -> ft.Control:
 
         metodo_pago = ord_item.get("metodoPago", "Efectivo")
         propina = ord_item.get("propina", 0)
+        fecha_pago = ord_item.get("fechaPago")
+        tipo_comprobante = ord_item.get("tipoComprobante")
         dian_num = ord_item.get("dianNumeroFactura")
         cufe = ord_item.get("cufe")
         qr_url = ord_item.get("qrCodeUrl")
@@ -259,6 +340,15 @@ def build_orders_content(page: ft.Page) -> ft.Control:
         detail_controls.extend([
             ft.Divider(color=ft.Colors.GREY_800),
             ft.Row(alignment=ft.MainAxisAlignment.SPACE_BETWEEN, controls=[ft.Text("Método de Pago:"), ft.Text(str(metodo_pago), weight=ft.FontWeight.BOLD, color=ft.Colors.CYAN_300)]),
+            ft.Row(
+                visible=bool(fecha_pago),
+                alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                controls=[
+                    ft.Text("Cobrada:"),
+                    ft.Text(f"{str(fecha_pago or '')[:16].replace('T', ' ')} · {'Factura electrónica' if tipo_comprobante == 'Electronica' else 'Recibo simple'}",
+                            size=12, color=ft.Colors.GREEN_300),
+                ],
+            ),
             ft.Row(alignment=ft.MainAxisAlignment.SPACE_BETWEEN, controls=[ft.Text("Subtotal:"), ft.Text(format_cop(ord_item.get("subtotal", 0)))]),
             ft.Row(alignment=ft.MainAxisAlignment.SPACE_BETWEEN, controls=[ft.Text("Descuento:"), ft.Text(f"-{format_cop(ord_item.get('descuento', 0))}", color=ft.Colors.AMBER_400)]),
             ft.Row(alignment=ft.MainAxisAlignment.SPACE_BETWEEN, controls=[ft.Text("Impuesto (IVA/INC):"), ft.Text(format_cop(ord_item.get("montoImpuesto", 0)))]),
@@ -300,7 +390,13 @@ def build_orders_content(page: ft.Page) -> ft.Control:
             ])
 
         detail_actions = [ft.TextButton("Cerrar", on_click=lambda _: page.pop_dialog())]
-        if is_admin_or_cajero and not cufe and ord_item.get("estado") != "Cancelada":
+        no_cancelada = ord_item.get("estado") != "Cancelada"
+        if is_admin_or_cajero and not fecha_pago and not cufe and no_cancelada:
+            detail_actions.insert(0, ft.FilledButton(
+                "💵 Cobrar", icon=ft.Icons.PAYMENTS_OUTLINED,
+                on_click=lambda _: (page.pop_dialog(), open_cobrar_dialog(ord_item)),
+                style=ft.ButtonStyle(bgcolor=ft.Colors.GREEN_700)))
+        elif is_admin_or_cajero and fecha_pago and not cufe and no_cancelada:
             def do_facturar_dian(e):
                 page.pop_dialog()
                 show_toast(page, "Transmitiendo a la DIAN...")
