@@ -298,6 +298,16 @@ class ApiClient:
         except Exception as e:
             return False, str(e)
 
+    def cobrar_orden(self, order_id: str, data: Dict[str, Any]) -> Tuple[bool, Dict[str, Any] | str]:
+        """Registra el cobro de una orden: método de pago, tipo de comprobante y correo opcional."""
+        try:
+            res = self._client.post(f"/SalesOrders/{order_id}/cobrar", json=data, headers=self._get_headers())
+            if res.status_code in (200, 201):
+                return True, res.json()
+            return False, self._parse_error(res)
+        except Exception as e:
+            return False, str(e)
+
     # =========================================================
     # USUARIOS (ADMIN)
     # =========================================================
