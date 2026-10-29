@@ -165,6 +165,20 @@ namespace ProyectoFinca.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(50)")
                         .HasColumnName("dian_numero_factura");
 
+                    b.Property<string>("CorreoCliente")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("correo_cliente");
+
+                    b.Property<DateTime?>("FechaPago")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("fecha_pago");
+
+                    b.Property<string>("TipoComprobante")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("tipo_comprobante");
+
                     b.Property<string>("Estado")
                         .IsRequired()
                         .HasMaxLength(20)

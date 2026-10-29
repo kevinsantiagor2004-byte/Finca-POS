@@ -84,9 +84,11 @@ public class SalesOrdersController : BaseApiController
         if (User.IsInRole("Mesero"))
             query = query.Where(so => so.UserId == CurrentUserId);
 
-        // El rol Restaurante ve las órdenes Facturadas por el cajero para despacho de alimentos/almuerzos
+        // El rol Restaurante ve las órdenes ya cobradas (facturadas, o completadas con comprobante simple)
+        // para el despacho de alimentos/almuerzos
         if (User.IsInRole("Restaurante"))
-            query = query.Where(so => so.Estado == SalesOrderStatus.Facturada);
+            query = query.Where(so => so.Estado == SalesOrderStatus.Facturada
+                                   || (so.Estado == SalesOrderStatus.Completada && so.FechaPago != null));
 
         // -----------------------------------------------
         // Filtros usando los índices optimizados en BD
@@ -488,6 +490,96 @@ public class SalesOrdersController : BaseApiController
     }
 
     // =========================================================
+    // POST /api/sales-orders/{id}/cobrar
+    // =========================================================
+
+    /// <summary>
+    /// Registra el cobro de una orden con el método de pago elegido.
+    /// - Comprobante "Electronica": emite la factura ante la DIAN y deja la orden en Facturada.
+    /// - Comprobante "Simple": solo registra el cobro y deja la orden en Completada.
+    /// </summary>
+    [HttpPost("{id:guid}/cobrar")]
+    [Authorize(Roles = "Admin,Cajero")]
+    [ProducesResponseType(typeof(SalesOrderResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Cobrar(Guid id, [FromBody] CobrarOrdenDto dto)
+    {
+        var order = await _context.SalesOrders
+            .Include(so => so.Usuario)
+            .Include(so => so.Plan)
+            .Include(so => so.SalesOrderServices).ThenInclude(sos => sos.Service)
+            .FirstOrDefaultAsync(so => so.Id == id);
+
+        if (order is null) return NotFoundResponse("SalesOrder", id);
+
+        if (order.Estado == SalesOrderStatus.Cancelada)
+            return BadRequest(new { error = "No se puede cobrar una orden cancelada." });
+
+        if (order.FechaPago.HasValue)
+            return BadRequest(new { error = "Esta orden ya fue cobrada." });
+
+        var yaFacturada = !string.IsNullOrEmpty(order.Cufe);
+        if (yaFacturada && dto.TipoComprobante == "Simple")
+            return BadRequest(new { error = "La orden ya tiene factura electrónica; use el comprobante electrónico." });
+
+        var estadoAnterior    = order.Estado;
+        order.MetodoPago      = dto.MetodoPago;
+        order.TipoComprobante = dto.TipoComprobante;
+        order.CorreoCliente   = string.IsNullOrWhiteSpace(dto.CorreoCliente) ? null : dto.CorreoCliente.Trim();
+        order.FechaPago       = DateTime.UtcNow;
+
+        if (dto.TipoComprobante == "Electronica")
+        {
+            if (!yaFacturada)
+            {
+                var dianResp = await _dianService.EmitirFacturaAsync(order);
+                if (!dianResp.Exitoso)
+                    return BadRequest(new { error = $"Error en transmisión DIAN: {dianResp.Mensaje}" });
+
+                order.Cufe              = dianResp.Cufe;
+                order.QrCodeUrl         = dianResp.QrCodeUrl;
+                order.DianEstado        = dianResp.Estado;
+                order.DianFechaEmision  = dianResp.FechaEmision;
+                order.DianAmbiente      = dianResp.Ambiente;
+                order.DianNumeroFactura = dianResp.NumeroFactura;
+            }
+            order.Estado = SalesOrderStatus.Facturada;
+        }
+        else if (order.Estado == SalesOrderStatus.Pendiente || order.Estado == SalesOrderStatus.EnProceso)
+        {
+            order.Estado = SalesOrderStatus.Completada;
+        }
+
+        await _context.SaveChangesAsync();
+
+        await _auditRepo.LogEventAsync(new AuditLogEntry
+        {
+            EventType      = "OrderPaid",
+            EntityName     = "SalesOrder",
+            EntityId       = order.Id.ToString(),
+            UserId         = CurrentUserId,
+            UserName       = CurrentUserName,
+            UserRole       = User.FindFirstValue(ClaimTypes.Role) ?? "Usuario",
+            Timestamp      = DateTime.UtcNow,
+            ClientPlatform = GetClientPlatform(),
+            PreviousState  = estadoAnterior.ToString(),
+            NewState       = order.Estado.ToString(),
+            Details        = new
+            {
+                order.NumeroOrden,
+                order.Total,
+                MetodoPago      = order.MetodoPago.ToString(),
+                order.TipoComprobante,
+                order.DianNumeroFactura,
+                ConCorreo       = order.CorreoCliente != null
+            }
+        });
+
+        return Ok(MapToResponse(order));
+    }
+
+    // =========================================================
     // DELETE /api/sales-orders/{id}  (Soft Delete)
     // =========================================================
 
@@ -593,6 +685,9 @@ public class SalesOrdersController : BaseApiController
         DianEstado         = o.DianEstado,
         DianFechaEmision   = o.DianFechaEmision,
         DianAmbiente       = o.DianAmbiente,
-        DianNumeroFactura  = o.DianNumeroFactura
+        DianNumeroFactura  = o.DianNumeroFactura,
+        FechaPago          = o.FechaPago,
+        TipoComprobante    = o.TipoComprobante,
+        CorreoCliente      = o.CorreoCliente
     };
 }
